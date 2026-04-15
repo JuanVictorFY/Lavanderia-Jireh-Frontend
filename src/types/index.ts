@@ -99,3 +99,6 @@ export interface DetalleServicio {
   precio_unitario: string;
   subtotal: string;
 }
+
+export type MetodoPago  = "efectivo" | "tarjeta" | "yape" | "transferencia" | "otro";
+export type EstadoPagoV = "pendiente" | "pagado" | "anulado";
