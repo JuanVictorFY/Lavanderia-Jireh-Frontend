@@ -90,3 +90,12 @@ export interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
+
+export interface DetalleServicio {
+  id: number;
+  id_servicio: number;
+  nombre_servicio: string;
+  cantidad: number;
+  precio_unitario: string;
+  subtotal: string;
+}
