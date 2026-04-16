@@ -110,3 +110,11 @@ export interface Notificacion {
   leida: boolean;
   fecha: string;
 }
+
+export interface AnalyticsResumen {
+  pedidos_hoy: number;
+  ingresos_hoy: number;
+  pedidos_mes: number;
+  total_clientes: number;
+}
+export interface IngresosPorDia { fecha: string; total: number; }
