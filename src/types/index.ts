@@ -102,3 +102,11 @@ export interface DetalleServicio {
 
 export type MetodoPago  = "efectivo" | "tarjeta" | "yape" | "transferencia" | "otro";
 export type EstadoPagoV = "pendiente" | "pagado" | "anulado";
+
+export interface Notificacion {
+  id: number;
+  mensaje: string;
+  tipo: "info" | "warning" | "error" | "success";
+  leida: boolean;
+  fecha: string;
+}
