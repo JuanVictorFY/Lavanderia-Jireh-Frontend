@@ -118,3 +118,12 @@ export interface AnalyticsResumen {
   total_clientes: number;
 }
 export interface IngresosPorDia { fecha: string; total: number; }
+
+export interface ServicioStats { nombre_servicio: string; cantidad: number; }
+export interface TopServiciosResponse {
+  top_servicios: ServicioStats[];
+  por_estado: Record<EstadoPedidoValue, number>;
+  ingresos_7_dias: IngresosPorDia[];
+  ingresos_6_meses: { mes: string; total: number }[];
+  resumen: AnalyticsResumen;
+}
