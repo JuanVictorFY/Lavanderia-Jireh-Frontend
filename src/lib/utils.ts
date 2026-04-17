@@ -28,3 +28,9 @@ export function formatDateShort(date: string | null | undefined) {
     year: "numeric",
   }).format(new Date(date));
 }
+
+export function groupBy<T>(arr: T[], key: (item: T) => string): Record<string, T[]> {
+  return arr.reduce<Record<string, T[]>>((acc, item) => {
+    const k = key(item); (acc[k] ??= []).push(item); return acc;
+  }, {});
+}
