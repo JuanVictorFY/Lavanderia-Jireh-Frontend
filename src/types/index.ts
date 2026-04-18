@@ -127,3 +127,11 @@ export interface TopServiciosResponse {
   ingresos_6_meses: { mes: string; total: number }[];
   resumen: AnalyticsResumen;
 }
+
+export interface DateRange { from: string | null; to: string | null; }
+export interface SearchFilters {
+  query: string;
+  page: number;
+  pageSize: number;
+  dateRange?: DateRange;
+}
