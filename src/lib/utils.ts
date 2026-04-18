@@ -34,3 +34,7 @@ export function groupBy<T>(arr: T[], key: (item: T) => string): Record<string, T
     const k = key(item); (acc[k] ??= []).push(item); return acc;
   }, {});
 }
+
+export function sumBy<T>(arr: T[], key: (item: T) => number): number {
+  return arr.reduce((acc, item) => acc + key(item), 0);
+}
