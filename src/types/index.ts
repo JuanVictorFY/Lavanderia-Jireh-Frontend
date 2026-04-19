@@ -135,3 +135,6 @@ export interface SearchFilters {
   pageSize: number;
   dateRange?: DateRange;
 }
+
+export interface ApiValidationError { [field: string]: string[]; }
+export type ApiError = { detail?: string; non_field_errors?: string[]; } & ApiValidationError;
