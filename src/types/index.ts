@@ -138,3 +138,10 @@ export interface SearchFilters {
 
 export interface ApiValidationError { [field: string]: string[]; }
 export type ApiError = { detail?: string; non_field_errors?: string[]; } & ApiValidationError;
+
+export interface PagedQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
+}
