@@ -38,3 +38,9 @@ export function groupBy<T>(arr: T[], key: (item: T) => string): Record<string, T
 export function sumBy<T>(arr: T[], key: (item: T) => number): number {
   return arr.reduce((acc, item) => acc + key(item), 0);
 }
+
+export function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "—";
+  const d = phone.replace(/\D/g, "");
+  return d.length === 9 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : phone;
+}
