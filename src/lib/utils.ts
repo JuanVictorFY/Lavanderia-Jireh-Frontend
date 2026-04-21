@@ -44,3 +44,10 @@ export function formatPhone(phone: string | null | undefined): string {
   const d = phone.replace(/\D/g, "");
   return d.length === 9 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : phone;
 }
+
+export function truncateText(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max).trimEnd()}…`;
+}
+export function getInitials(nombres: string, apellidos: string): string {
+  return `${nombres.charAt(0)}${apellidos.charAt(0)}`.toUpperCase();
+}
