@@ -145,3 +145,5 @@ export interface PagedQueryParams {
   search?: string;
   ordering?: string;
 }
+
+export interface PagoDetalle extends Pago { pedido_codigo: string; cliente_nombre: string; }
