@@ -51,3 +51,10 @@ export function truncateText(text: string, max: number): string {
 export function getInitials(nombres: string, apellidos: string): string {
   return `${nombres.charAt(0)}${apellidos.charAt(0)}`.toUpperCase();
 }
+
+export function capitalize(text: string): string {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase() : "";
+}
+export function pluralize(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
