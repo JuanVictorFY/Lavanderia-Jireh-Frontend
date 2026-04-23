@@ -58,3 +58,12 @@ export function capitalize(text: string): string {
 export function pluralize(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+export function parseApiError(err: unknown): string {
+  const data = (err as { response?: { data?: Record<string, unknown> } }).response?.data;
+  if (!data || typeof data !== "object") return "Error inesperado.";
+  return Object.values(data).flat().join(" ") || "Error al procesar la solicitud.";
+}
