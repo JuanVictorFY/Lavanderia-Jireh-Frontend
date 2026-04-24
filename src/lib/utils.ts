@@ -67,3 +67,17 @@ export function parseApiError(err: unknown): string {
   if (!data || typeof data !== "object") return "Error inesperado.";
   return Object.values(data).flat().join(" ") || "Error al procesar la solicitud.";
 }
+
+export function getEstadoLabel(estado: string): string {
+  const labels: Record<string, string> = {
+    pendiente:"Pendiente", en_proceso:"En proceso",
+    listo:"Listo", entregado:"Entregado", cancelado:"Cancelado",
+  };
+  return labels[estado] ?? estado;
+}
+export function formatDateRange(from: string | null, to: string | null): string {
+  if (!from && !to) return "Todas las fechas";
+  if (from && !to)  return `Desde ${formatDateShort(from)}`;
+  if (!from && to)  return `Hasta ${formatDateShort(to)}`;
+  return `${formatDateShort(from)} — ${formatDateShort(to)}`;
+}
