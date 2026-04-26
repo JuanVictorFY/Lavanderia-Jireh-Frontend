@@ -81,3 +81,8 @@ export function formatDateRange(from: string | null, to: string | null): string 
   if (!from && to)  return `Hasta ${formatDateShort(to)}`;
   return `${formatDateShort(from)} — ${formatDateShort(to)}`;
 }
+
+export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number) {
+  let timer: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
