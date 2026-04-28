@@ -18,6 +18,7 @@ interface AuthState {
   isAuthenticated: () => boolean;
   isAdmin: () => boolean;
   isOperario: () => boolean;
+  isRecepcionista: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: () => !!get().accessToken,
       isAdmin:     () => get().empleado?.rol === "administrador",
       isOperario:  () => get().empleado?.rol === "operario",
+      isRecepcionista: () => get().empleado?.rol === "recepcionista",
     }),
     { name: "lavanderia-auth" }
   )
