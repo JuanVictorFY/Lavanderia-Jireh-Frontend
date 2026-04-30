@@ -147,3 +147,7 @@ export interface PagedQueryParams {
 }
 
 export interface PagoDetalle extends Pago { pedido_codigo: string; cliente_nombre: string; }
+
+export type Nullable<T>  = T | null;
+export type Optional<T>  = T | null | undefined;
+export type WithId<T>    = T & { id: number };
