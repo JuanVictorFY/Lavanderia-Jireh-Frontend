@@ -151,3 +151,6 @@ export interface PagoDetalle extends Pago { pedido_codigo: string; cliente_nombr
 export type Nullable<T>  = T | null;
 export type Optional<T>  = T | null | undefined;
 export type WithId<T>    = T & { id: number };
+
+export interface EmpleadoConRol extends Empleado { id_rol: number; }
+export type RolNombre = "administrador" | "recepcionista" | "operario";
