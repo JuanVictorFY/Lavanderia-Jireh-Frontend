@@ -86,3 +86,12 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: numb
   let timer: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
 }
+
+export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+  return keys.reduce((acc, key) => ({ ...acc, [key]: obj[key] }), {} as Pick<T, K>);
+}
+export function omit<T extends object, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
+  const result = { ...obj };
+  keys.forEach((k) => delete (result as Record<string, unknown>)[k as string]);
+  return result as Omit<T, K>;
+}
