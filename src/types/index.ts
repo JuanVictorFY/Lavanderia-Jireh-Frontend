@@ -154,3 +154,7 @@ export type WithId<T>    = T & { id: number };
 
 export interface EmpleadoConRol extends Empleado { id_rol: number; }
 export type RolNombre = "administrador" | "recepcionista" | "operario";
+
+export interface PaginationState {
+  page: number; pageSize: number; total: number; totalPages: number;
+}
