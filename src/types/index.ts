@@ -158,3 +158,5 @@ export type RolNombre = "administrador" | "recepcionista" | "operario";
 export interface PaginationState {
   page: number; pageSize: number; total: number; totalPages: number;
 }
+
+export interface SortConfig<T> { key: keyof T; direction: "asc" | "desc"; }
