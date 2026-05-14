@@ -95,3 +95,11 @@ export function omit<T extends object, K extends keyof T>(obj: T, keys: K[]): Om
   keys.forEach((k) => delete (result as Record<string, unknown>)[k as string]);
   return result as Omit<T, K>;
 }
+
+export function clampPage(page: number, totalPages: number): number {
+  return Math.max(1, Math.min(page, Math.max(1, totalPages)));
+}
+export function buildQueryString(params: Record<string, string | number | boolean | null | undefined>): string {
+  const entries = Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  return entries.length ? "?" + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&") : "";
+}
