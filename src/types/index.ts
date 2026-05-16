@@ -160,3 +160,15 @@ export interface PaginationState {
 }
 
 export interface SortConfig<T> { key: keyof T; direction: "asc" | "desc"; }
+
+export interface ReciboPedido {
+  codigo: string;
+  cliente: string;
+  empleado: string;
+  fecha_ingreso: string;
+  fecha_entrega: string | null;
+  prendas: Prenda[];
+  subtotal: number;
+  igv: number;
+  total: number;
+}
