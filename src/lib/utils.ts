@@ -103,3 +103,9 @@ export function buildQueryString(params: Record<string, string | number | boolea
   const entries = Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== "");
   return entries.length ? "?" + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&") : "";
 }
+
+export function formatIGV(amount: number, rate = 0.18) {
+  const subtotal = amount / (1 + rate);
+  const igv = amount - subtotal;
+  return { subtotal: +subtotal.toFixed(2), igv: +igv.toFixed(2), total: +amount.toFixed(2) };
+}
