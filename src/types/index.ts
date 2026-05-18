@@ -172,3 +172,9 @@ export interface ReciboPedido {
   igv: number;
   total: number;
 }
+
+export interface ClienteConPedidos extends Cliente {
+  total_pedidos: number;
+  pedidos_activos: number;
+  ultimo_pedido: string | null;
+}
