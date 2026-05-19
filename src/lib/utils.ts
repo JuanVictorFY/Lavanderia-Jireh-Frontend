@@ -109,3 +109,10 @@ export function formatIGV(amount: number, rate = 0.18) {
   const igv = amount - subtotal;
   return { subtotal: +subtotal.toFixed(2), igv: +igv.toFixed(2), total: +amount.toFixed(2) };
 }
+
+export function daysUntil(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const t   = new Date(dateStr); t.setHours(0,0,0,0);
+  return Math.round((t.getTime() - now.getTime()) / 86_400_000);
+}
