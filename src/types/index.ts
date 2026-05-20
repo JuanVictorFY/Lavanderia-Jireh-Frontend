@@ -178,3 +178,10 @@ export interface ClienteConPedidos extends Cliente {
   pedidos_activos: number;
   ultimo_pedido: string | null;
 }
+
+export interface PrintOptions {
+  copies?: number;
+  orientation?: "portrait" | "landscape";
+  includeHeader?: boolean;
+  includeFooter?: boolean;
+}
