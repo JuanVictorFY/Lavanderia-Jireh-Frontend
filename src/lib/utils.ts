@@ -116,3 +116,9 @@ export function daysUntil(dateStr: string | null): number | null {
   const t   = new Date(dateStr); t.setHours(0,0,0,0);
   return Math.round((t.getTime() - now.getTime()) / 86_400_000);
 }
+
+export function slugify(text: string): string {
+  return text.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
