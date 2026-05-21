@@ -122,3 +122,11 @@ export function slugify(text: string): string {
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
+
+export function sortBy<T>(arr: T[], key: keyof T, dir: "asc" | "desc" = "asc"): T[] {
+  return [...arr].sort((a, b) => {
+    if (a[key] < b[key]) return dir === "asc" ? -1 : 1;
+    if (a[key] > b[key]) return dir === "asc" ?  1 : -1;
+    return 0;
+  });
+}
