@@ -191,3 +191,5 @@ export interface EmpleadoStats {
   pedidos_mes: number;
   pedidos_activos: number;
 }
+
+export type BadgeVariant = "default" | "success" | "warning" | "error" | "info";
