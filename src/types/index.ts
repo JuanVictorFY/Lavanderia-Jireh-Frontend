@@ -185,3 +185,9 @@ export interface PrintOptions {
   includeHeader?: boolean;
   includeFooter?: boolean;
 }
+
+export interface EmpleadoStats {
+  total_pedidos: number;
+  pedidos_mes: number;
+  pedidos_activos: number;
+}
