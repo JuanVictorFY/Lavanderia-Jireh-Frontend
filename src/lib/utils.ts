@@ -130,3 +130,15 @@ export function sortBy<T>(arr: T[], key: keyof T, dir: "asc" | "desc" = "asc"): 
     return 0;
   });
 }
+
+export function formatRelativeTime(dateStr: string): string {
+  const diff  = Date.now() - new Date(dateStr).getTime();
+  const mins  = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days  = Math.floor(diff / 86_400_000);
+  if (mins < 1)   return "hace un momento";
+  if (mins < 60)  return `hace ${mins} min`;
+  if (hours < 24) return `hace ${hours}h`;
+  if (days < 7)   return `hace ${days} días`;
+  return formatDateShort(dateStr);
+}
