@@ -193,3 +193,11 @@ export interface EmpleadoStats {
 }
 
 export type BadgeVariant = "default" | "success" | "warning" | "error" | "info";
+
+export interface Turno {
+  id: number;
+  empleado_id: number;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string | null;
+}
