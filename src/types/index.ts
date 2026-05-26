@@ -201,3 +201,11 @@ export interface Turno {
   hora_inicio: string;
   hora_fin: string | null;
 }
+
+export interface TableColumn<T> {
+  key: keyof T;
+  label: string;
+  sortable?: boolean;
+  width?: string;
+  align?: "left" | "center" | "right";
+}
