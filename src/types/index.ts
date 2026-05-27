@@ -209,3 +209,5 @@ export interface TableColumn<T> {
   width?: string;
   align?: "left" | "center" | "right";
 }
+
+export interface UploadedFile { name: string; size: number; type: string; url: string; }
