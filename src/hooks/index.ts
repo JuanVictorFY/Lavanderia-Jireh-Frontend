@@ -6,3 +6,4 @@ export { useSort }         from "./useSort";
 export { useTitle }        from "./useTitle";
 export { useWindowSize } from "./useWindowSize";
 export { useMediaQuery, useIsMobile, useIsDesktop } from "./useMediaQuery";
+export { useClipboard } from "./useClipboard";
