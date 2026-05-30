@@ -1,0 +1,152 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search, Users, Phone, Mail, History } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { PageSpinner } from "@/components/ui/spinner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { formatDateShort } from "@/lib/utils";
+import api from "@/lib/api";
+import type { Cliente, PaginatedResponse } from "@/types";
+import { useNavigate } from "react-router-dom";
+
+const schema = z.object({
+  nombres:   z.string().min(1, "Requerido"),
+  apellidos: z.string().min(1, "Requerido"),
+  telefono:  z.string().optional(),
+  correo:    z.string().email("Email inválido").optional().or(z.literal("")),
+  direccion: z.string().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
+
+export function Clientes() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const { data, isLoading } = useQuery<PaginatedResponse<Cliente>>({
+    queryKey: ["clientes"],
+    queryFn: () => api.get("/clientes/").then((r) => r.data),
+  });
+
+  const clientes = data?.results ?? [];
+  const filtrados = clientes.filter(
+    (c) =>
+      `${c.nombres} ${c.apellidos}`.toLowerCase().includes(search.toLowerCase()) ||
+      c.correo?.toLowerCase().includes(search.toLowerCase()) ||
+      c.telefono?.includes(search)
+  );
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  const crear = useMutation({
+    mutationFn: (data: FormData) => api.post("/clientes/", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["clientes"] });
+      setModalOpen(false);
+      reset();
+    },
+  });
+
+  if (isLoading) return <PageSpinner />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Clientes</h1>
+          <p className="text-slate-400 text-sm mt-0.5">{data?.count ?? 0} clientes registrados</p>
+        </div>
+        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)} className="self-start sm:self-auto">
+          Nuevo cliente
+        </Button>
+      </div>
+
+      <div className="max-w-sm">
+        <Input
+          placeholder="Buscar cliente..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<Search className="w-4 h-4" />}
+        />
+      </div>
+
+      {filtrados.length === 0 ? (
+        <div className="text-center py-16 text-slate-500">
+          <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No se encontraron clientes</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtrados.map((cliente) => (
+            <Card key={cliente.id} hoverable onClick={() => navigate(`/clientes/${cliente.id}`)}>
+              <div className="px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-violet-500/15 flex items-center justify-center text-violet-300 font-bold text-sm shrink-0">
+                    {cliente.nombres[0]}{cliente.apellidos[0]}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-100 truncate">
+                      {cliente.nombres} {cliente.apellidos}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Desde {formatDateShort(cliente.fecha_registro)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  {cliente.telefono && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <Phone className="w-3.5 h-3.5 shrink-0" />
+                      {cliente.telefono}
+                    </div>
+                  )}
+                  {cliente.correo && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <Mail className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{cliente.correo}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 pt-3 border-t border-white/6 flex items-center gap-1.5 text-xs text-violet-400 font-medium">
+                  <History className="w-3.5 h-3.5" />
+                  Ver historial de pedidos
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); reset(); }} title="Nuevo cliente">
+        <form onSubmit={handleSubmit((d) => crear.mutate(d))} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Nombres" {...register("nombres")} error={errors.nombres?.message} />
+            <Input label="Apellidos" {...register("apellidos")} error={errors.apellidos?.message} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Teléfono" {...register("telefono")} placeholder="999 000 000" />
+            <Input label="Correo" type="email" {...register("correo")} placeholder="correo@ejemplo.com" error={errors.correo?.message} />
+          </div>
+          <Input label="Dirección" {...register("direccion")} placeholder="Av. Principal 123..." />
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => { setModalOpen(false); reset(); }}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="flex-1" loading={isSubmitting}>
+              Guardar cliente
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
