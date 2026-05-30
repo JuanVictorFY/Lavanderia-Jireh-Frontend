@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Ban } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageSpinner } from "@/components/ui/spinner";
+import { Pagination } from "@/components/ui/pagination";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import api from "@/lib/api";
 import type { Pago, PaginatedResponse } from "@/types";
+
+const PAGE_SIZE = 10;
 
 const METODO_LABELS: Record<string, string> = {
   efectivo:      "Efectivo",
@@ -18,10 +22,11 @@ const METODO_LABELS: Record<string, string> = {
 
 export function Pagos() {
   const qc = useQueryClient();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery<PaginatedResponse<Pago>>({
-    queryKey: ["pagos"],
-    queryFn: () => api.get("/pagos/").then((r) => r.data),
+    queryKey: ["pagos", page],
+    queryFn: () => api.get(`/pagos/?page=${page}&page_size=${PAGE_SIZE}`).then((r) => r.data),
   });
 
   const anular = useMutation({
@@ -31,13 +36,15 @@ export function Pagos() {
 
   if (isLoading) return <PageSpinner />;
 
-  const pagos = data?.results ?? [];
+  const pagos      = data?.results ?? [];
+  const total      = data?.count ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Pagos</h1>
-        <p className="text-slate-400 text-sm mt-0.5">{data?.count ?? 0} pagos registrados</p>
+        <p className="text-slate-400 text-sm mt-0.5">{total} pagos registrados</p>
       </div>
 
       {/* Cards — mobile */}
@@ -153,6 +160,7 @@ export function Pagos() {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
       </Card>
     </div>
   );
