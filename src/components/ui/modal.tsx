@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface ModalProps {
   open: boolean;
@@ -16,6 +17,45 @@ const sizeClasses = {
   lg: "max-w-2xl",
   xl: "max-w-4xl",
 };
+
+interface ConfirmModalProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  description?: string;
+  loading?: boolean;
+}
+
+export function ConfirmModal({ open, onClose, onConfirm, title, description, loading }: ConfirmModalProps) {
+  return (
+    <Modal open={open} onClose={onClose} title={title} size="sm">
+      <div className="space-y-5">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+            <Trash2 className="w-5 h-5 text-red-400" />
+          </div>
+          <p className="text-sm text-slate-300 pt-2">
+            {description ?? "Esta acción no se puede deshacer."}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="flex-1 bg-red-600 hover:bg-red-500 border-red-600 hover:border-red-500"
+            loading={loading}
+            onClick={onConfirm}
+          >
+            Eliminar
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
   useEffect(() => {
