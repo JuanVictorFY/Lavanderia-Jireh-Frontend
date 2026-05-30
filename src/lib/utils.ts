@@ -157,3 +157,11 @@ export function chunk<T>(arr: T[], size: number): T[][] {
 export function formatPercentage(value: number, total: number, decimals = 1): string {
   return total === 0 ? "0%" : `${((value / total) * 100).toFixed(decimals)}%`;
 }
+
+export function retry<T>(fn: () => Promise<T>, times = 3, delay = 1000): Promise<T> {
+  return fn().catch((err) =>
+    times > 1
+      ? new Promise<void>((res) => setTimeout(res, delay)).then(() => retry(fn, times - 1, delay))
+      : Promise.reject(err)
+  );
+}
