@@ -153,3 +153,7 @@ export function formatBytes(bytes: number, decimals = 2): string {
 export function chunk<T>(arr: T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size));
 }
+
+export function formatPercentage(value: number, total: number, decimals = 1): string {
+  return total === 0 ? "0%" : `${((value / total) * 100).toFixed(decimals)}%`;
+}
