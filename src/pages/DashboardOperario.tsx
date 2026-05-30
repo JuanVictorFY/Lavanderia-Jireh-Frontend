@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Package, Clock, CheckCircle2, PlayCircle, WashingMachine, ArrowRight } from "lucide-react";
+import { Clock, CheckCircle2, PlayCircle, ArrowRight, Flame, RefreshCw, Package } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { EstadoBadge } from "@/components/ui/badge";
 import { PageSpinner } from "@/components/ui/spinner";
 import { useAuthStore } from "@/store/auth";
 import { formatDate } from "@/lib/utils";
@@ -10,40 +9,85 @@ import api from "@/lib/api";
 import type { Pedido, PaginatedResponse } from "@/types";
 import { useNavigate } from "react-router-dom";
 
-function StatCard({
-  icon, label, value, color, sub,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  color: string;
-  sub?: string;
+/* ─── Helpers de urgencia ─── */
+function isToday(d: string | null) {
+  if (!d) return false;
+  const t = new Date(), v = new Date(d);
+  return v.getFullYear() === t.getFullYear() && v.getMonth() === t.getMonth() && v.getDate() === t.getDate();
+}
+function isOverdue(d: string | null) {
+  if (!d) return false;
+  const v = new Date(d); v.setHours(23, 59, 59, 999);
+  return v < new Date();
+}
+function urgency(p: Pedido): "overdue" | "today" | null {
+  if (isOverdue(p.fecha_entrega)) return "overdue";
+  if (isToday(p.fecha_entrega))   return "today";
+  return null;
+}
+function sortByUrgency(a: Pedido, b: Pedido) {
+  const aU = urgency(a) !== null ? 0 : 1;
+  const bU = urgency(b) !== null ? 0 : 1;
+  if (aU !== bU) return aU - bU;
+  if (!a.fecha_entrega) return 1;
+  if (!b.fecha_entrega) return -1;
+  return new Date(a.fecha_entrega).getTime() - new Date(b.fecha_entrega).getTime();
+}
+
+/* ─── Stat card ─── */
+function StatCard({ icon, label, value, color, urgent }: {
+  icon: React.ReactNode; label: string; value: number; color: string; urgent?: boolean;
 }) {
   return (
-    <Card className="flex-1">
-      <CardBody className="flex items-start gap-4 py-5">
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-          {icon}
-        </div>
+    <Card className={urgent && value > 0 ? "border border-red-500/30" : ""}>
+      <CardBody className="flex items-center gap-3 py-4">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>{icon}</div>
         <div>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          <p className="text-sm text-slate-400 font-medium">{label}</p>
-          {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+          <p className={`text-2xl font-bold ${urgent && value > 0 ? "text-red-400" : "text-white"}`}>{value}</p>
+          <p className="text-xs text-slate-400">{label}</p>
         </div>
       </CardBody>
     </Card>
   );
 }
 
-function PrendaCount({ count }: { count: number }) {
+/* ─── Fila de pedido ─── */
+function PedidoRow({ pedido, etiqueta, loading, onAccion, onNav, variant = "primary" }: {
+  pedido: Pedido; etiqueta: string; loading: boolean;
+  onAccion: () => void; onNav: () => void; variant?: "primary" | "secondary";
+}) {
+  const u = urgency(pedido);
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-      <Package className="w-3 h-3" />
-      {count} {count === 1 ? "prenda" : "prendas"}
-    </span>
+    <div className="px-4 py-3.5 flex items-center gap-3">
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={onNav}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold text-white font-mono">{pedido.codigo}</p>
+          {u === "overdue" && (
+            <span className="text-xs font-semibold text-red-400 bg-red-500/10 rounded px-1.5 py-0.5 leading-none">Vencido</span>
+          )}
+          {u === "today" && (
+            <span className="text-xs font-semibold text-orange-400 bg-orange-500/10 rounded px-1.5 py-0.5 leading-none">Entrega hoy</span>
+          )}
+        </div>
+        <p className="text-xs text-slate-400 truncate mt-0.5">{pedido.cliente_nombre}</p>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+            <Package className="w-3 h-3" />
+            {pedido.prendas.length} {pedido.prendas.length === 1 ? "prenda" : "prendas"}
+          </span>
+          {pedido.fecha_entrega && u === null && (
+            <span className="text-xs text-slate-500">Entrega: {formatDate(pedido.fecha_entrega)}</span>
+          )}
+        </div>
+      </div>
+      <Button size="sm" variant={variant} loading={loading} onClick={onAccion}>
+        {etiqueta}
+      </Button>
+    </div>
   );
 }
 
+/* ─── Dashboard principal ─── */
 export function DashboardOperario() {
   const empleado = useAuthStore((s) => s.empleado);
   const navigate  = useNavigate();
@@ -52,196 +96,178 @@ export function DashboardOperario() {
   const hora   = new Date().getHours();
   const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
-  const { data, isLoading } = useQuery<PaginatedResponse<Pedido>>({
-    queryKey: ["pedidos"],
-    queryFn: () => api.get("/pedidos/").then((r) => r.data),
+  const { data, isLoading, dataUpdatedAt } = useQuery<PaginatedResponse<Pedido>>({
+    queryKey: ["pedidos-operario"],
+    queryFn:  () => api.get("/pedidos/?page_size=100").then((r) => r.data),
+    staleTime:       30_000,
+    refetchInterval: 30_000,
   });
 
   const cambiarEstado = useMutation({
     mutationFn: ({ id, estado }: { id: number; estado: string }) =>
       api.patch(`/pedidos/${id}/cambiar-estado/`, { estado, descripcion: "" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pedidos"] }),
+    onMutate: async ({ id, estado }) => {
+      await qc.cancelQueries({ queryKey: ["pedidos-operario"] });
+      const prev = qc.getQueryData<PaginatedResponse<Pedido>>(["pedidos-operario"]);
+      qc.setQueryData<PaginatedResponse<Pedido>>(["pedidos-operario"], (old) =>
+        old ? { ...old, results: old.results.map((p) => p.id === id ? { ...p, estado: estado as Pedido["estado"] } : p) } : old
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => { if (ctx?.prev) qc.setQueryData(["pedidos-operario"], ctx.prev); },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["pedidos-operario"] }),
   });
 
-  const pedidos    = data?.results ?? [];
-  const pendientes = pedidos.filter((p) => p.estado === "pendiente");
-  const enProceso  = pedidos.filter((p) => p.estado === "en_proceso");
-  const listos     = pedidos.filter((p) => p.estado === "listo");
+  const cargando = (id: number) => cambiarEstado.isPending && cambiarEstado.variables?.id === id;
 
   if (isLoading) return <PageSpinner />;
 
+  const todos     = data?.results ?? [];
+  const enProceso = todos.filter((p) => p.estado === "en_proceso");
+  const pendientes = todos.filter((p) => p.estado === "pendiente").sort(sortByUrgency);
+  const urgentes  = pendientes.filter((p) => urgency(p) !== null);
+  const normales  = pendientes.filter((p) => urgency(p) === null);
+  const listos    = todos.filter((p) => p.estado === "listo");
+
+  const updatedTime = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            {saludo}, {empleado?.nombres}
-          </h1>
-          <p className="text-slate-400 text-sm mt-0.5">Aquí están los pedidos que necesitan atención</p>
-        </div>
-        <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-2 self-start sm:self-auto">
-          <WashingMachine className="w-4 h-4 text-violet-400" />
-          <span className="text-sm font-medium text-violet-300">
+          <h1 className="text-2xl font-bold text-white">{saludo}, {empleado?.nombres}</h1>
+          <p className="text-slate-400 text-sm mt-0.5">
             {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
-          </span>
+          </p>
         </div>
+        {updatedTime && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 self-start sm:self-auto">
+            <RefreshCw className="w-3 h-3" />
+            Actualizado {updatedTime}
+          </div>
+        )}
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          icon={<Clock className="w-5 h-5 text-amber-400" />}
-          color="bg-amber-500/10"
-          label="Pendientes"
-          value={pendientes.length}
-          sub="Sin iniciar"
-        />
-        <StatCard
-          icon={<PlayCircle className="w-5 h-5 text-blue-400" />}
-          color="bg-blue-500/10"
-          label="En proceso"
-          value={enProceso.length}
-          sub="En lavado"
-        />
-        <StatCard
-          icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-          color="bg-emerald-500/10"
-          label="Listos"
-          value={listos.length}
-          sub="Para entregar"
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={<Clock        className="w-4 h-4 text-amber-400"  />} color="bg-amber-500/10"  label="Pendientes" value={pendientes.length} />
+        <StatCard icon={<PlayCircle   className="w-4 h-4 text-blue-400"   />} color="bg-blue-500/10"   label="En proceso"  value={enProceso.length} />
+        <StatCard icon={<Flame        className="w-4 h-4 text-red-400"    />} color="bg-red-500/10"    label="Urgentes"    value={urgentes.length}  urgent />
+        <StatCard icon={<CheckCircle2 className="w-4 h-4 text-emerald-400"/>} color="bg-emerald-500/10" label="Listos"     value={listos.length} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Cola de trabajo: pendientes + en proceso */}
-        <div className="space-y-4">
-          {/* En proceso */}
+      {/* Cola de trabajo + sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* Trabajando ahora */}
           {enProceso.length > 0 && (
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                  <h2 className="text-sm font-semibold text-slate-100">En proceso ({enProceso.length})</h2>
+                  <h2 className="text-sm font-semibold text-slate-100">Trabajando ahora ({enProceso.length})</h2>
                 </div>
               </CardHeader>
               <div className="divide-y divide-white/5">
                 {enProceso.map((p) => (
-                  <div key={p.id} className="px-4 py-3.5 flex items-center justify-between gap-3">
-                    <div
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => navigate(`/pedidos/${p.id}`)}
-                    >
-                      <p className="text-sm font-semibold text-white font-mono">{p.codigo}</p>
-                      <p className="text-xs text-slate-400 truncate">{p.cliente_nombre}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <PrendaCount count={p.prendas.length} />
-                        {p.fecha_entrega && (
-                          <span className="text-xs text-slate-500">
-                            Entrega: {formatDate(p.fecha_entrega)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={cambiarEstado.isPending}
-                      onClick={() => cambiarEstado.mutate({ id: p.id, estado: "listo" })}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                      Marcar listo
-                    </Button>
-                  </div>
+                  <PedidoRow key={p.id} pedido={p} etiqueta="Marcar listo" variant="secondary"
+                    loading={cargando(p.id)}
+                    onAccion={() => cambiarEstado.mutate({ id: p.id, estado: "listo" })}
+                    onNav={() => navigate(`/pedidos/${p.id}`)}
+                  />
                 ))}
               </div>
             </Card>
           )}
 
-          {/* Pendientes */}
+          {/* Urgentes */}
+          {urgentes.length > 0 && (
+            <Card className="border border-red-500/20">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-red-400" />
+                  <h2 className="text-sm font-semibold text-red-300">Urgentes — entrega hoy o vencida ({urgentes.length})</h2>
+                </div>
+              </CardHeader>
+              <div className="divide-y divide-white/5">
+                {urgentes.map((p) => (
+                  <PedidoRow key={p.id} pedido={p} etiqueta="Iniciar"
+                    loading={cargando(p.id)}
+                    onAccion={() => cambiarEstado.mutate({ id: p.id, estado: "en_proceso" })}
+                    onNav={() => navigate(`/pedidos/${p.id}`)}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Por iniciar */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-amber-400" />
-                <h2 className="text-sm font-semibold text-slate-100">
-                  Pendientes ({pendientes.length})
-                </h2>
+                <h2 className="text-sm font-semibold text-slate-100">Por iniciar ({normales.length})</h2>
               </div>
             </CardHeader>
-            {pendientes.length === 0 ? (
+            {normales.length === 0 ? (
               <CardBody>
-                <p className="text-sm text-slate-500 py-4 text-center">Sin pedidos pendientes</p>
+                <p className="text-sm text-slate-500 py-4 text-center">
+                  {pendientes.length === 0 ? "Sin pedidos pendientes ✓" : "Solo hay urgentes pendientes"}
+                </p>
               </CardBody>
             ) : (
               <div className="divide-y divide-white/5">
-                {pendientes.map((p) => (
-                  <div key={p.id} className="px-4 py-3.5 flex items-center justify-between gap-3">
-                    <div
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => navigate(`/pedidos/${p.id}`)}
-                    >
-                      <p className="text-sm font-semibold text-white font-mono">{p.codigo}</p>
-                      <p className="text-xs text-slate-400 truncate">{p.cliente_nombre}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <PrendaCount count={p.prendas.length} />
-                        {p.fecha_entrega && (
-                          <span className="text-xs text-slate-500">
-                            Entrega: {formatDate(p.fecha_entrega)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      loading={cambiarEstado.isPending}
-                      onClick={() => cambiarEstado.mutate({ id: p.id, estado: "en_proceso" })}
-                    >
-                      <PlayCircle className="w-3.5 h-3.5 mr-1" />
-                      Iniciar
-                    </Button>
-                  </div>
+                {normales.map((p) => (
+                  <PedidoRow key={p.id} pedido={p} etiqueta="Iniciar"
+                    loading={cargando(p.id)}
+                    onAccion={() => cambiarEstado.mutate({ id: p.id, estado: "en_proceso" })}
+                    onNav={() => navigate(`/pedidos/${p.id}`)}
+                  />
                 ))}
               </div>
             )}
           </Card>
         </div>
 
-        {/* Listos para entrega */}
-        <Card className="h-fit">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <h2 className="text-sm font-semibold text-slate-100">
-                Listos para entregar ({listos.length})
-              </h2>
-            </div>
-          </CardHeader>
-          {listos.length === 0 ? (
-            <CardBody>
-              <p className="text-sm text-slate-500 py-4 text-center">Ninguno listo aún</p>
-            </CardBody>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {listos.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => navigate(`/pedidos/${p.id}`)}
-                  className="px-4 py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/4 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-white font-mono">{p.codigo}</p>
-                      <EstadoBadge estado={p.estado} />
+        {/* Sidebar: listos para entregar */}
+        <div>
+          <Card className="h-fit">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                <h2 className="text-sm font-semibold text-slate-100">Listos para entregar ({listos.length})</h2>
+              </div>
+            </CardHeader>
+            {listos.length === 0 ? (
+              <CardBody>
+                <p className="text-sm text-slate-500 py-4 text-center">Ninguno listo aún</p>
+              </CardBody>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {listos.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => navigate(`/pedidos/${p.id}`)}
+                    className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/4 transition-colors"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
-                    <p className="text-xs text-slate-400 truncate mt-0.5">{p.cliente_nombre}</p>
-                    <PrendaCount count={p.prendas.length} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-200 font-mono">{p.codigo}</p>
+                      <p className="text-xs text-slate-500 truncate">{p.cliente_nombre}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
