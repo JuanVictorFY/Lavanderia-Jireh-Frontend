@@ -213,3 +213,6 @@ export interface TableColumn<T> {
 export interface UploadedFile { name: string; size: number; type: string; url: string; }
 
 export interface Config { apiBaseUrl: string; appName: string; version: string; igvRate: number; }
+
+export interface ChartDataPoint { label: string; value: number; color?: string; }
+export interface ChartSeries    { name: string; data: ChartDataPoint[]; }
