@@ -1,0 +1,128 @@
+import { NavLink, useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth";
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Users,
+  Scissors,
+  CreditCard,
+  UserCog,
+  LogOut,
+  WashingMachine,
+  BarChart3,
+  X,
+} from "lucide-react";
+
+interface NavItem {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  adminOnly?: boolean;
+  noOperario?: boolean;
+}
+
+const navItems: NavItem[] = [
+  { to: "/dashboard",  icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard" },
+  { to: "/pedidos",    icon: <ShoppingBag className="w-5 h-5" />,     label: "Pedidos" },
+  { to: "/clientes",   icon: <Users className="w-5 h-5" />,           label: "Clientes",  noOperario: true },
+  { to: "/servicios",  icon: <Scissors className="w-5 h-5" />,        label: "Servicios", noOperario: true },
+  { to: "/pagos",      icon: <CreditCard className="w-5 h-5" />,      label: "Pagos",     noOperario: true },
+  { to: "/reportes",   icon: <BarChart3 className="w-5 h-5" />,       label: "Reportes",  adminOnly: true },
+  { to: "/empleados",  icon: <UserCog className="w-5 h-5" />,         label: "Empleados", adminOnly: true },
+];
+
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+  const navigate = useNavigate();
+  const { empleado, logout, isAdmin, isOperario } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const handleNavClick = () => {
+    onClose?.();
+  };
+
+  return (
+    <aside
+      className={cn(
+        "fixed left-0 top-0 h-screen w-60 bg-[#0D0F1A] flex flex-col z-40 transition-transform duration-300",
+        "md:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
+      {/* Logo */}
+      <div className="px-5 py-6 border-b border-white/6">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/30">
+            <WashingMachine className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-white font-bold text-sm leading-tight">Lavandería</p>
+            <p className="text-violet-400 text-xs font-medium">Jireh</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="md:hidden p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/7 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {navItems
+          .filter((item) => !item.adminOnly  || isAdmin())
+          .filter((item) => !item.noOperario || !isOperario())
+          .map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={handleNavClick}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                  isActive
+                    ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
+                    : "text-slate-400 hover:text-white hover:bg-white/7"
+                )
+              }
+            >
+              {item.icon}
+              {item.label}
+            </NavLink>
+          ))}
+      </nav>
+
+      {/* User footer */}
+      <div className="px-3 py-4 border-t border-white/6">
+        <div className="flex items-center gap-3 px-3 py-2 mb-1">
+          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+            {empleado?.nombres?.[0]}{empleado?.apellidos?.[0]}
+          </div>
+          <div className="min-w-0">
+            <p className="text-white text-xs font-medium truncate">
+              {empleado?.nombres} {empleado?.apellidos}
+            </p>
+            <p className="text-slate-400 text-xs capitalize truncate">{empleado?.rol}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-white/7 transition-all duration-150 cursor-pointer"
+        >
+          <LogOut className="w-5 h-5" />
+          Cerrar sesión
+        </button>
+      </div>
+    </aside>
+  );
+}
