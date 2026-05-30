@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth";
-import { Plus, Search, ShoppingBag, Filter } from "lucide-react";
+import { Plus, Search, ShoppingBag, Filter, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EstadoBadge } from "@/components/ui/badge";
 import { PageSpinner } from "@/components/ui/spinner";
+import { ConfirmModal } from "@/components/ui/modal";
+import { Pagination } from "@/components/ui/pagination";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import api from "@/lib/api";
 import type { Pedido, PaginatedResponse, EstadoPedidoValue } from "@/types";
+
+const PAGE_SIZE = 8;
 
 const ESTADOS: { value: EstadoPedidoValue | "todos"; label: string }[] = [
   { value: "todos",      label: "Todos" },
@@ -23,16 +27,49 @@ const ESTADOS: { value: EstadoPedidoValue | "todos"; label: string }[] = [
 
 export function Pedidos() {
   const navigate    = useNavigate();
+  const qc          = useQueryClient();
   const isOperario  = useAuthStore((s) => s.isOperario)();
-  const [search, setSearch] = useState("");
+
+  const [page, setPage]                 = useState(1);
+  const [search, setSearch]             = useState("");
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedidoValue | "todos">("todos");
+  const [confirmModal, setConfirmModal] = useState(false);
+  const [eliminandoId, setEliminandoId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery<PaginatedResponse<Pedido>>({
-    queryKey: ["pedidos"],
-    queryFn: () => api.get("/pedidos/").then((r) => r.data),
+    queryKey: ["pedidos", page],
+    queryFn: () => api.get(`/pedidos/?page=${page}&page_size=${PAGE_SIZE}`).then((r) => r.data),
   });
 
+  const eliminar = useMutation({
+    mutationFn: (id: number) => api.delete(`/pedidos/${id}/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pedidos"] });
+      setConfirmModal(false);
+      setEliminandoId(null);
+      if (pedidos.length === 1 && page > 1) setPage((p) => p - 1);
+    },
+  });
+
+  const confirmarEliminar = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEliminandoId(id);
+    setConfirmModal(true);
+  };
+
+  const cambiarFiltroEstado = (estado: EstadoPedidoValue | "todos") => {
+    setFiltroEstado(estado);
+    setPage(1);
+  };
+
+  const cambiarSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
   const pedidos = data?.results ?? [];
+  const total   = data?.count ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const filtrados = pedidos.filter((p) => {
     const matchSearch =
@@ -46,11 +83,20 @@ export function Pedidos() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        open={confirmModal}
+        onClose={() => { setConfirmModal(false); setEliminandoId(null); }}
+        onConfirm={() => eliminandoId !== null && eliminar.mutate(eliminandoId)}
+        title="Eliminar pedido"
+        description="¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer."
+        loading={eliminar.isPending}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Pedidos</h1>
-          <p className="text-slate-400 text-sm mt-0.5">{data?.count ?? 0} pedidos en total</p>
+          <p className="text-slate-400 text-sm mt-0.5">{total} pedidos en total</p>
         </div>
         {!isOperario && (
           <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => navigate("/pedidos/nuevo")} className="self-start sm:self-auto">
@@ -65,7 +111,7 @@ export function Pedidos() {
           <Input
             placeholder="Buscar por código o cliente..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => cambiarSearch(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
           />
         </div>
@@ -75,7 +121,7 @@ export function Pedidos() {
             {ESTADOS.map((e) => (
               <button
                 key={e.value}
-                onClick={() => setFiltroEstado(e.value)}
+                onClick={() => cambiarFiltroEstado(e.value)}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                   filtroEstado === e.value
                     ? "bg-violet-600 text-white shadow-sm"
@@ -106,7 +152,18 @@ export function Pedidos() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-mono font-semibold text-violet-400">{pedido.codigo}</span>
-                  <EstadoBadge estado={pedido.estado} />
+                  <div className="flex items-center gap-2">
+                    <EstadoBadge estado={pedido.estado} />
+                    {!isOperario && (
+                      <button
+                        onClick={(e) => confirmarEliminar(pedido.id, e)}
+                        title="Eliminar pedido"
+                        className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm font-medium text-slate-100">{pedido.cliente_nombre}</p>
                 <div className="flex items-center justify-between gap-2">
@@ -131,12 +188,13 @@ export function Pedidos() {
                 <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 whitespace-nowrap">Entrega</th>
                 <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 whitespace-nowrap">Estado</th>
                 <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 whitespace-nowrap">Total</th>
+                {!isOperario && <th className="px-3 py-3" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/4">
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-500 text-sm">
+                  <td colSpan={isOperario ? 6 : 7} className="text-center py-12 text-slate-500 text-sm">
                     <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     No se encontraron pedidos
                   </td>
@@ -163,12 +221,26 @@ export function Pedidos() {
                   <td className="px-5 py-3.5 text-right">
                     <span className="text-sm font-semibold text-white whitespace-nowrap">{formatCurrency(pedido.total)}</span>
                   </td>
+                  {!isOperario && (
+                    <td className="px-3 py-3.5">
+                      <button
+                        onClick={(e) => confirmarEliminar(pedido.id, e)}
+                        title="Eliminar pedido"
+                        className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
       </Card>
+
+      <Pagination page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
     </div>
   );
 }

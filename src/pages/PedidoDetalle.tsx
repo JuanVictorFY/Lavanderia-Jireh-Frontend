@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft, Package, Clock, ChevronRight, Calculator, CreditCard, AlertCircle, FileText,
+  ArrowLeft, Package, Clock, ChevronRight, Calculator, CreditCard, AlertCircle, FileText, Trash2,
 } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EstadoBadge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
-import { Modal } from "@/components/ui/modal";
+import { Modal, ConfirmModal } from "@/components/ui/modal";
 import { PageSpinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -39,8 +39,9 @@ export function PedidoDetalle() {
   const qc         = useQueryClient();
   const isOperario = useAuthStore((s) => s.isOperario)();
 
-  const [modalEstado, setModalEstado]   = useState(false);
-  const [modalPago, setModalPago]       = useState(false);
+  const [modalEstado, setModalEstado]     = useState(false);
+  const [modalPago, setModalPago]         = useState(false);
+  const [confirmEliminar, setConfirmEliminar] = useState(false);
   const [nuevoEstado, setNuevoEstado] = useState<EstadoPedidoValue>("pendiente");
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto]             = useState("");
@@ -49,6 +50,14 @@ export function PedidoDetalle() {
   const { data: pedido, isLoading } = useQuery<Pedido>({
     queryKey: ["pedido", id],
     queryFn: () => api.get(`/pedidos/${id}/`).then((r) => r.data),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: () => api.delete(`/pedidos/${id}/`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pedidos"] });
+      navigate("/pedidos");
+    },
   });
 
   const calcularTotal = useMutation({
@@ -97,7 +106,7 @@ export function PedidoDetalle() {
           </div>
           <p className="text-slate-400 text-sm mt-0.5">{pedido.cliente_nombre} · Ingresado {formatDate(pedido.fecha_ingreso)}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {!isOperario && (
             <Button variant="outline" leftIcon={<Calculator className="w-4 h-4" />} onClick={() => calcularTotal.mutate()} loading={calcularTotal.isPending}>
               Calcular total
@@ -119,6 +128,16 @@ export function PedidoDetalle() {
           {!isOperario && (
             <Button leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => { setMonto(pedido.total); setModalPago(true); }}>
               Registrar pago
+            </Button>
+          )}
+          {!isOperario && (
+            <Button
+              variant="ghost"
+              leftIcon={<Trash2 className="w-4 h-4" />}
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              onClick={() => setConfirmEliminar(true)}
+            >
+              Eliminar
             </Button>
           )}
         </div>
@@ -220,6 +239,16 @@ export function PedidoDetalle() {
           </Card>
         </div>
       </div>
+
+      {/* Modal confirmar eliminación */}
+      <ConfirmModal
+        open={confirmEliminar}
+        onClose={() => setConfirmEliminar(false)}
+        onConfirm={() => eliminar.mutate()}
+        title="Eliminar pedido"
+        description={`¿Eliminar el pedido ${pedido.codigo}? Esta acción no se puede deshacer.`}
+        loading={eliminar.isPending}
+      />
 
       {/* Modal cambiar estado */}
       <Modal open={modalEstado} onClose={() => setModalEstado(false)} title="Cambiar estado del pedido">
