@@ -2,12 +2,15 @@
 
 Sistema de gestión integral para lavanderías. Permite administrar pedidos, clientes, empleados, servicios y pagos, con dashboards diferenciados por rol, reportes analíticos y consulta pública del estado de pedidos.
 
+> **Backend:** [JeancarloMejia/LavanderiaJirehBackend](https://github.com/JeancarloMejia/LavanderiaJirehBackend) — API REST con Django 5 + PostgreSQL, desplegada en [lavanderiajireh-api.onrender.com](https://lavanderiajireh-api.onrender.com)
+
 ---
 
 ## Tabla de contenidos
 
 - [Características](#características)
 - [Stack tecnológico](#stack-tecnológico)
+- [Arquitectura](#arquitectura)
 - [Requisitos](#requisitos)
 - [Instalación](#instalación)
 - [Variables de entorno](#variables-de-entorno)
@@ -16,6 +19,7 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 - [Módulos del sistema](#módulos-del-sistema)
 - [Roles y permisos](#roles-y-permisos)
 - [Autenticación](#autenticación)
+- [Endpoints del backend](#endpoints-del-backend)
 
 ---
 
@@ -36,6 +40,8 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 
 ## Stack tecnológico
 
+### Frontend
+
 | Categoría | Tecnología | Versión |
 |---|---|---|
 | Framework UI | React | 19.2 |
@@ -55,14 +61,67 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 | QR | qrcode.react | 4.2 |
 | PWA | vite-plugin-pwa | 1.3 |
 
+### Backend
+
+| Categoría | Tecnología | Versión |
+|---|---|---|
+| Lenguaje | Python | 3.12 |
+| Framework | Django + DRF | 5.2 / 3.15 |
+| Base de datos | PostgreSQL (Neon) | — |
+| Autenticación | SimpleJWT | 5.3 |
+| Generación PDF | ReportLab | 4.2 |
+| Exportación Excel | openpyxl | 3.1 |
+| Servidor | Gunicorn + WhiteNoise | — |
+| Despliegue | Render.com | — |
+
+---
+
+## Arquitectura
+
+```
+┌──────────────────────────────┐        HTTPS / REST API
+│   Frontend (React + Vite)    │ ──────────────────────────► ┌──────────────────────────────┐
+│   Puerto 5173 (dev)          │                             │   Backend (Django + DRF)      │
+│                              │ ◄────────────────────────── │   lavanderiajireh-api.onrender│
+│  /api/*   → proxy → backend  │        JSON + JWT           │   PostgreSQL en Neon (cloud)  │
+│  /pedido/ → proxy → backend  │                             └──────────────────────────────┘
+└──────────────────────────────┘
+```
+
+En desarrollo, Vite redirige `/api` y `/pedido` al backend mediante un proxy configurado en `vite.config.ts`. En producción el frontend apunta directamente a la URL de la API mediante `VITE_API_URL`.
+
 ---
 
 ## Requisitos
 
 - **Node.js** 18 o superior
-- **Backend** corriendo en `http://localhost:8000`
+- **Backend** corriendo localmente en `http://localhost:8000` o URL de producción
 
-> El backend del proyecto se encuentra en el repositorio [Lavandería Jireh — Backend](../LavanderiaJirehBackend).
+### Levantar el backend localmente
+
+```bash
+# Clonar el backend
+git clone https://github.com/JeancarloMejia/LavanderiaJirehBackend.git
+cd LavanderiaJirehBackend
+
+# Crear entorno virtual
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux / macOS
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con los valores correspondientes (DATABASE_URL, SECRET_KEY...)
+
+# Aplicar migraciones y arrancar
+python manage.py migrate
+python manage.py runserver
+```
+
+> El backend también está disponible en producción: `https://lavanderiajireh-api.onrender.com`
 
 ---
 
@@ -75,19 +134,26 @@ cd Lavanderia-Jireh-Frontend-Actualizado
 
 # Instalar dependencias
 npm install
+
+# Configurar variables de entorno
+cp .env.example .env
 ```
 
 ---
 
 ## Variables de entorno
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crea un archivo `.env` en la raíz del proyecto (puedes copiar `.env.example`):
 
 ```env
+# Desarrollo local (el proxy de Vite lo redirige automáticamente)
 VITE_API_URL=http://localhost:8000
+
+# Producción
+# VITE_API_URL=https://lavanderiajireh-api.onrender.com
 ```
 
-Si no se define la variable, el proxy de Vite apunta a `http://localhost:8000` por defecto durante el desarrollo.
+El proxy de Vite en `vite.config.ts` usa esta variable para redirigir `/api` y `/pedido` al backend, tanto en desarrollo como en otros entornos.
 
 ---
 
@@ -214,13 +280,13 @@ src/
 - Cambio rápido de estado directamente desde el dashboard
 
 ### Consulta pública
-- Búsqueda de pedidos por código sin autenticación
+- Búsqueda de pedidos por código (`LAV-XXXXXX`) sin autenticación
 - Timeline visual del historial de estados
 
 ### Recibo
 - Recibo imprimible con detalle de prendas y servicios
 - Desglose de subtotal, IGV (18%) y total
-- Código QR para compartir el estado del pedido
+- Código QR para consultar el estado del pedido
 
 ---
 
@@ -236,11 +302,65 @@ src/
 
 ## Autenticación
 
-El sistema utiliza **JWT** con doble token:
+El sistema utiliza **JWT** con doble token (gestionados por [SimpleJWT](https://django-rest-framework-simplejwt.readthedocs.io/)):
 
-- `access` — token de corta duración incluido en el header `Authorization: Bearer`
-- `refresh` — token de larga duración usado para renovar el access token automáticamente
+- `access` — token de corta duración (60 min) incluido en el header `Authorization: Bearer`
+- `refresh` — token de larga duración (7 días) usado para renovar el access token automáticamente
 
 El cliente Axios (`src/lib/api.ts`) intercepta las respuestas `401` para intentar renovar el token transparentemente. Si la renovación falla, se limpia la sesión y se redirige al login.
 
 La sesión se persiste en `localStorage` mediante Zustand, permitiendo que el usuario permanezca autenticado entre sesiones.
+
+---
+
+## Endpoints del backend
+
+Todos los endpoints requieren `Authorization: Bearer <access_token>` salvo los indicados.
+
+### Autenticación _(público)_
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/auth/login/` | Obtener tokens (username + password) |
+| `POST` | `/api/auth/refresh/` | Renovar access token |
+| `POST` | `/api/auth/logout/` | Invalidar refresh token |
+
+### Pedidos
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET / POST` | `/api/pedidos/` | Listar / crear pedidos |
+| `GET / PATCH / DELETE` | `/api/pedidos/{id}/` | Detalle, actualizar o eliminar |
+| `POST` | `/api/pedidos/{id}/cambiar-estado/` | Cambiar estado del pedido |
+| `GET` | `/api/pedidos/{id}/recibo/` | Descargar recibo PDF |
+| `GET` | `/pedido/{codigo}/` | Consulta pública por código _(sin auth)_ |
+
+### Clientes
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET / POST` | `/api/clientes/` | Listar / crear clientes |
+| `GET / PATCH / DELETE` | `/api/clientes/{id}/` | Detalle, actualizar o eliminar |
+| `GET / POST` | `/api/clientes/autorizadas/` | Personas autorizadas |
+
+### Servicios
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET / POST` | `/api/servicios/` | Listar / crear servicios |
+| `GET / PATCH / DELETE` | `/api/servicios/{id}/` | Detalle, actualizar o eliminar |
+| `GET / POST` | `/api/servicios/detalles/` | Detalles de servicio por prenda |
+
+### Pagos
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET / POST` | `/api/pagos/` | Listar / registrar pagos |
+| `GET / PATCH / DELETE` | `/api/pagos/{id}/` | Detalle, actualizar o anular |
+
+### Empleados _(admin)_
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET / POST` | `/api/usuarios/empleados/` | Listar / crear empleados |
+| `GET / PATCH / DELETE` | `/api/usuarios/empleados/{id}/` | Detalle, actualizar o eliminar |
+
+### Reportes _(admin)_
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/reportes/analytics/` | Estadísticas y resumen del período |
+| `GET` | `/api/reportes/excel/` | Exportar pedidos a Excel |
