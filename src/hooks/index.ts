@@ -8,3 +8,4 @@ export { useWindowSize } from "./useWindowSize";
 export { useMediaQuery, useIsMobile, useIsDesktop } from "./useMediaQuery";
 export { useClipboard } from "./useClipboard";
 export { useKeyPress } from "./useKeyPress";
+export { useFetch } from "./useFetch";
