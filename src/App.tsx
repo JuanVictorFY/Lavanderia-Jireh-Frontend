@@ -14,6 +14,7 @@ import { Empleados } from "@/pages/Empleados";
 import { Reportes } from "@/pages/Reportes";
 import { ConsultaPublica } from "@/pages/ConsultaPublica";
 import { Recibo } from "@/pages/Recibo";
+import LandingPage from "@/pages/LandingPage";
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -26,12 +27,12 @@ export default function App() {
     <QueryClientProvider client={qc}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/pedido/:codigo" element={<ConsultaPublica />} />
           <Route path="/pedidos/:id/recibo" element={<Recibo />} />
 
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/pedidos/nuevo" element={<NuevoPedido />} />
@@ -44,7 +45,7 @@ export default function App() {
             <Route path="/reportes" element={<Reportes />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
