@@ -1,6 +1,6 @@
 # Lavandería Jireh — Frontend
 
-Sistema de gestión integral para lavanderías. Permite administrar pedidos, clientes, empleados, servicios y pagos, con dashboards diferenciados por rol, reportes analíticos y consulta pública del estado de pedidos.
+Plataforma completa de Lavandería Jireh que integra una **landing page pública** y un **sistema de gestión interno** para administrar pedidos, clientes, empleados, servicios y pagos, con dashboards diferenciados por rol, reportes analíticos y consulta pública del estado de pedidos.
 
 > **Backend:** [JeancarloMejia/LavanderiaJirehBackend](https://github.com/JeancarloMejia/LavanderiaJirehBackend) — API REST con Django 5 + PostgreSQL, desplegada en [lavanderiajireh-api.onrender.com](https://lavanderiajireh-api.onrender.com)
 
@@ -16,6 +16,7 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 - [Variables de entorno](#variables-de-entorno)
 - [Comandos disponibles](#comandos-disponibles)
 - [Estructura del proyecto](#estructura-del-proyecto)
+- [Landing page](#landing-page)
 - [Módulos del sistema](#módulos-del-sistema)
 - [Roles y permisos](#roles-y-permisos)
 - [Autenticación](#autenticación)
@@ -25,6 +26,18 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 
 ## Características
 
+### Landing page pública (`/`)
+- **Hero section** con palabras rotativas animadas y parallax al mover el cursor
+- **Sección Nosotros** con línea de tiempo y tarjeta flotante de experiencia
+- **Sección Servicios** con 4 tarjetas animadas y CTA de acceso al sistema
+- **Sección Características** con lista de beneficios y animaciones en scroll
+- **Sección Proceso** con línea de progreso animada y pasos numerados
+- **Sección Testimonios** con carrusel deslizable y avatares apilados
+- **Sección Blog** con artículos en grid y fechas actualizadas
+- **Footer completo** con newsletter, links rápidos y botón de acceso al sistema
+- **Botones "Acceder al sistema"** en Navbar, Hero y Footer → redirigen a `/login`
+
+### Sistema de gestión (requiere autenticación)
 - **Gestión completa de pedidos** — creación, seguimiento de estados, prendas, servicios y recibos con código QR
 - **CRUD de clientes** — incluyendo personas autorizadas e historial de pedidos
 - **CRUD de empleados** — con asignación de roles y credenciales de acceso
@@ -48,6 +61,7 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 | Lenguaje | TypeScript | 6.0 |
 | Bundler | Vite | 8.0 |
 | Estilos | Tailwind CSS | 4.3 |
+| Animaciones | Framer Motion | 12.x |
 | Enrutamiento | React Router DOM | 7.15 |
 | Estado global | Zustand | 5.0 |
 | Fetching y caché | TanStack Query | 5.100 |
@@ -79,13 +93,26 @@ Sistema de gestión integral para lavanderías. Permite administrar pedidos, cli
 ## Arquitectura
 
 ```
-┌──────────────────────────────┐        HTTPS / REST API
-│   Frontend (React + Vite)    │ ──────────────────────────► ┌──────────────────────────────┐
-│   Puerto 5173 (dev)          │                             │   Backend (Django + DRF)      │
-│                              │ ◄────────────────────────── │   lavanderiajireh-api.onrender│
-│  /api/*   → proxy → backend  │        JSON + JWT           │   PostgreSQL en Neon (cloud)  │
-│  /pedido/ → proxy → backend  │                             └──────────────────────────────┘
-└──────────────────────────────┘
+Visitante (público)
+       │
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│              Frontend — React + Vite (puerto 5173)       │
+│                                                          │
+│  /  ──────► LandingPage (público, sin autenticación)     │
+│  /login ──► Login                                        │
+│  /dashboard, /pedidos, /clientes… ──► AppLayout (JWT)    │
+│                                                          │
+│  /api/*   ─── proxy ──────────────────────────────────► │
+│  /pedido/ ─── proxy ──────────────────────────────────► │
+└─────────────────────────────────────────────────────────┘
+                                │  HTTPS / REST API + JWT
+                                ▼
+              ┌─────────────────────────────────┐
+              │  Backend — Django + DRF          │
+              │  lavanderiajireh-api.onrender.com │
+              │  PostgreSQL en Neon (cloud)       │
+              └─────────────────────────────────┘
 ```
 
 En desarrollo, Vite redirige `/api` y `/pedido` al backend mediante un proxy configurado en `vite.config.ts`. En producción el frontend apunta directamente a la URL de la API mediante `VITE_API_URL`.
@@ -129,8 +156,8 @@ python manage.py runserver
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/JuanVictorFY/Lavanderia-Jireh-Frontend-Actualizado.git
-cd Lavanderia-Jireh-Frontend-Actualizado
+git clone https://github.com/JuanVictorFY/Lavanderia-Jireh-Frontend.git
+cd Lavanderia-Jireh-Frontend
 
 # Instalar dependencias
 npm install
@@ -163,7 +190,7 @@ El proxy de Vite en `vite.config.ts` usa esta variable para redirigir `/api` y `
 # Servidor de desarrollo con hot reload
 npm run dev
 
-# Build de producción
+# Build de producción (TypeScript + Vite)
 npm run build
 
 # Vista previa del build de producción
@@ -179,43 +206,55 @@ npm run lint
 
 ```
 src/
-├── assets/                  # Imágenes, SVGs y recursos estáticos
+├── assets/                      # Imágenes, SVGs y recursos estáticos
 ├── components/
+│   ├── landing/                 # Componentes de la landing page pública
+│   │   ├── Navbar.tsx           # Navbar con scroll activo y botón "Acceder al sistema"
+│   │   ├── HeroSection.tsx      # Hero con parallax, palabras rotativas y CTA
+│   │   ├── AboutSection.tsx     # Historia y valores con animaciones en scroll
+│   │   ├── ServicesSection.tsx  # Tarjetas de servicios con hover y CTA
+│   │   ├── FeaturesSection.tsx  # Beneficios con lista animada y badge flotante
+│   │   ├── ProcessSection.tsx   # Proceso paso a paso con línea de progreso
+│   │   ├── TestimonialsSection.tsx # Carrusel de testimonios con avatares
+│   │   ├── BlogSection.tsx      # Grid de artículos del blog
+│   │   └── Footer.tsx           # Footer con newsletter, links y acceso al sistema
 │   ├── layout/
-│   │   ├── AppLayout.tsx    # Layout protegido con sidebar responsive
-│   │   └── Sidebar.tsx      # Navegación lateral filtrada por rol
+│   │   ├── AppLayout.tsx        # Layout protegido con sidebar responsive
+│   │   └── Sidebar.tsx          # Navegación lateral filtrada por rol
 │   └── ui/
 │       ├── alert.tsx
-│       ├── badge.tsx        # Badge genérico + EstadoBadge por estado de pedido
+│       ├── badge.tsx            # Badge genérico + EstadoBadge por estado de pedido
 │       ├── button.tsx
 │       ├── card.tsx
 │       ├── divider.tsx
 │       ├── empty-state.tsx
 │       ├── input.tsx
-│       ├── modal.tsx        # Modal genérico + ConfirmModal
+│       ├── modal.tsx            # Modal genérico + ConfirmModal
 │       ├── pagination.tsx
 │       ├── select.tsx
-│       ├── skeleton.tsx     # SkeletonCard y SkeletonTable
+│       ├── skeleton.tsx         # SkeletonCard y SkeletonTable
 │       ├── spinner.tsx
 │       ├── textarea.tsx
 │       └── tooltip.tsx
 ├── hooks/
-│   ├── useClipboard.ts      # Copiar al portapapeles
-│   ├── useConfirm.ts        # Modal de confirmación con estado
-│   ├── useDebounce.ts       # Debounce de valores reactivos
-│   ├── useFetch.ts          # Fetch básico con loading/error
-│   ├── useKeyPress.ts       # Detección de teclas
-│   ├── useLocalStorage.ts   # Persistencia en localStorage
-│   ├── useMediaQuery.ts     # useIsMobile / useIsDesktop
-│   ├── usePagination.ts     # Gestión de paginación
-│   ├── useSort.ts           # Gestión de ordenamiento
-│   ├── useTitle.ts          # document.title dinámico
-│   └── useWindowSize.ts     # Dimensiones de ventana reactivas
+│   ├── useScrollAnimation.ts    # useInView de framer-motion para animaciones en scroll
+│   ├── useClipboard.ts          # Copiar al portapapeles
+│   ├── useConfirm.ts            # Modal de confirmación con estado
+│   ├── useDebounce.ts           # Debounce de valores reactivos
+│   ├── useFetch.ts              # Fetch básico con loading/error
+│   ├── useKeyPress.ts           # Detección de teclas
+│   ├── useLocalStorage.ts       # Persistencia en localStorage
+│   ├── useMediaQuery.ts         # useIsMobile / useIsDesktop
+│   ├── usePagination.ts         # Gestión de paginación
+│   ├── useSort.ts               # Gestión de ordenamiento
+│   ├── useTitle.ts              # document.title dinámico
+│   └── useWindowSize.ts         # Dimensiones de ventana reactivas
 ├── lib/
-│   ├── api.ts               # Cliente Axios con interceptores JWT y auto-refresh
-│   ├── constants.ts         # Labels de estados, métodos de pago y roles
-│   └── utils.ts             # 30+ helpers (formateo, validación, arreglos, fechas)
+│   ├── api.ts                   # Cliente Axios con interceptores JWT y auto-refresh
+│   ├── constants.ts             # Labels de estados, métodos de pago y roles
+│   └── utils.ts                 # 30+ helpers (formateo, validación, arreglos, fechas)
 ├── pages/
+│   ├── LandingPage.tsx          # Página pública de inicio (ruta "/")
 │   ├── Login.tsx
 │   ├── Dashboard.tsx
 │   ├── DashboardOperario.tsx
@@ -231,11 +270,40 @@ src/
 │   ├── Empleados.tsx
 │   └── Reportes.tsx
 ├── store/
-│   └── auth.ts              # Store de sesión (Zustand + persistencia)
+│   └── auth.ts                  # Store de sesión (Zustand + persistencia)
 ├── types/
-│   └── index.ts             # Interfaces y tipos globales del dominio
-├── App.tsx                  # Router principal
-└── main.tsx                 # Punto de entrada
+│   └── index.ts                 # Interfaces y tipos globales del dominio
+├── App.tsx                      # Router principal con rutas públicas y protegidas
+└── main.tsx                     # Punto de entrada
+```
+
+---
+
+## Landing page
+
+La ruta `/` carga la **LandingPage** — completamente pública, sin necesidad de autenticación. Sirve como punto de entrada para nuevos visitantes e incluye llamadas a la acción que redirigen al sistema de gestión en `/login`.
+
+### Secciones
+
+| Sección | Descripción |
+|---|---|
+| **Navbar** | Fija, con scroll suave a cada sección y botón "Acceder al sistema" → `/login` |
+| **Hero** | Fondo primario con burbujas animadas, palabras rotativas y parallax al cursor |
+| **Nosotros** | Historia de la empresa, 15+ años de experiencia y lista de beneficios |
+| **Servicios** | 4 tarjetas: Lavado doméstico, Limpieza en seco, Eliminación de manchas, Planchado |
+| **Características** | 5 beneficios clave con iconos animados y badge flotante |
+| **Proceso** | 4 pasos con línea de progreso animada al entrar en viewport |
+| **Testimonios** | Carrusel deslizable con 4 reseñas y stack de avatares (+20k clientes) |
+| **Blog** | Grid de 4 artículos con imagen, fecha y autor |
+| **Footer** | Newsletter, links rápidos, datos de contacto y acceso al sistema |
+
+### Conexión con el sistema
+
+Todos los botones y links de conversión de la landing page apuntan a `/login`, donde el personal puede autenticarse para acceder al sistema de gestión.
+
+```
+Landing (/)  ──►  Login (/login)  ──►  Dashboard (/dashboard)
+                                   └──►  Pedidos, Clientes, etc.
 ```
 
 ---
@@ -310,6 +378,8 @@ El sistema utiliza **JWT** con doble token (gestionados por [SimpleJWT](https://
 El cliente Axios (`src/lib/api.ts`) intercepta las respuestas `401` para intentar renovar el token transparentemente. Si la renovación falla, se limpia la sesión y se redirige al login.
 
 La sesión se persiste en `localStorage` mediante Zustand, permitiendo que el usuario permanezca autenticado entre sesiones.
+
+> La landing page (`/`) y la consulta pública (`/pedido/:codigo`) son las únicas rutas accesibles sin autenticación.
 
 ---
 
