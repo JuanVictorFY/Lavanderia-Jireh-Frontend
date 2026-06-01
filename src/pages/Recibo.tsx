@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowLeft, Printer, CheckCircle, Clock, Package,
   Droplets, Wind, Zap, Sparkles, MapPin, Phone, Calendar, Hash,
+  Mail, Send, CheckCircle2,
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
-import type { Pedido, EstadoPedidoValue } from "@/types";
+import type { Pedido, Cliente, EstadoPedidoValue } from "@/types";
 
 // ── Logo SVG ──────────────────────────────────────────────────────────────────
 function LogoSVG({ size = 56 }: { size?: number }) {
@@ -46,7 +48,6 @@ const ESTADO_CFG: Record<EstadoPedidoValue, { label: string; color: string; bg: 
   cancelado:  { label: "Cancelado",           color: "text-red-700",    bg: "bg-red-50    border-red-200",    dot: "bg-red-500"    },
 };
 
-// ── Icono de servicio por índice ──────────────────────────────────────────────
 const SVC_ICONS  = [Droplets, Wind, Zap, Sparkles] as const;
 const SVC_COLORS = [
   { bg: "bg-sky-100",    icon: "text-sky-600"    },
@@ -55,17 +56,59 @@ const SVC_COLORS = [
   { bg: "bg-teal-100",   icon: "text-teal-600"   },
 ];
 
+// ── Botón enviar correo ───────────────────────────────────────────────────────
+function BtnEnviarCorreo({ pedidoId, correo }: { pedidoId: string; correo?: string | null }) {
+  const [sent, setSent] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () => api.post(`/pedidos/${pedidoId}/enviar-recibo/`),
+    onSuccess: () => setSent(true),
+  });
+
+  if (!correo) return null;
+
+  if (sent) {
+    return (
+      <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-semibold">
+        <CheckCircle2 className="w-4 h-4" />
+        Enviado a {correo}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => mutation.mutate()}
+      disabled={mutation.isPending}
+      className="flex items-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm cursor-pointer"
+    >
+      {mutation.isPending ? (
+        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <Send className="w-4 h-4" />
+      )}
+      Enviar al correo
+    </button>
+  );
+}
+
 // ── Página ────────────────────────────────────────────────────────────────────
 export function Recibo() {
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: pedido, isLoading } = useQuery<Pedido>({
+  const { data: pedido, isLoading: loadPedido } = useQuery<Pedido>({
     queryKey: ["pedido", id],
     queryFn: () => api.get(`/pedidos/${id}/`).then((r) => r.data),
   });
 
-  if (isLoading || !pedido) {
+  const { data: cliente } = useQuery<Cliente>({
+    queryKey: ["cliente-recibo", pedido?.cliente_id],
+    queryFn: () => api.get(`/clientes/${pedido!.cliente_id}/`).then((r) => r.data),
+    enabled: !!pedido?.cliente_id,
+  });
+
+  if (loadPedido || !pedido) {
     return (
       <div className="min-h-screen flex items-center justify-center"
            style={{ background: "linear-gradient(135deg,#0E7490 0%,#0891B2 50%,#22D3EE 100%)" }}>
@@ -79,6 +122,12 @@ export function Recibo() {
   const igv      = total - subtotal;
   const estado   = ESTADO_CFG[pedido.estado] ?? ESTADO_CFG.pendiente;
   const qrValue  = `${pedido.codigo} | ${pedido.cliente_nombre} | S/ ${pedido.total}`;
+
+  // Datos del cliente: primero del pedido (si backend los incluye), luego del fetch secundario
+  const clienteDni      = pedido.cliente_dni      ?? cliente?.dni      ?? null;
+  const clienteTelefono = pedido.cliente_telefono ?? cliente?.telefono ?? null;
+  const clienteCorreo   = pedido.cliente_correo   ?? cliente?.correo   ?? null;
+  const clienteDireccion = pedido.cliente_direccion ?? cliente?.direccion ?? null;
 
   return (
     <div
@@ -94,6 +143,7 @@ export function Recibo() {
           <ArrowLeft className="w-4 h-4" /> Volver
         </button>
         <div className="flex-1" />
+        <BtnEnviarCorreo pedidoId={id!} correo={clienteCorreo} />
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 bg-white text-teal-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-teal-50 transition-colors shadow-lg"
@@ -110,29 +160,23 @@ export function Recibo() {
           className="relative overflow-hidden px-8 py-8"
           style={{ background: "linear-gradient(135deg,#0E7490 0%,#0891B2 60%,#22D3EE 100%)" }}
         >
-          {/* Círculos decorativos de fondo */}
           <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/5" />
           <div className="absolute -bottom-12 -left-8  w-36 h-36 rounded-full bg-white/5" />
           <div className="absolute top-4   right-24   w-16 h-16 rounded-full bg-white/8" />
 
-          {/* Logo + empresa + código */}
           <div className="relative flex items-center justify-between flex-wrap gap-6">
-            {/* Izq */}
             <div className="flex items-center gap-4">
               <div className="bg-white/15 backdrop-blur-sm p-2.5 rounded-2xl ring-1 ring-white/25">
                 <LogoSVG size={54} />
               </div>
               <div>
                 <h1 className="text-white font-bold text-2xl leading-tight tracking-tight">
-                  Lavanderia Jireh
+                  Lavandería Jireh
                 </h1>
-                <p className="text-teal-100 text-sm mt-0.5">
-                  Servicio Profesional de Lavandería
-                </p>
+                <p className="text-teal-100 text-sm mt-0.5">Servicio Profesional de Lavandería</p>
               </div>
             </div>
 
-            {/* Der: código + badge estado */}
             <div className="text-right">
               <p className="text-teal-200 text-xs font-semibold uppercase tracking-widest mb-1">
                 Recibo Electrónico
@@ -147,7 +191,6 @@ export function Recibo() {
             </div>
           </div>
 
-          {/* Banda inferior del header */}
           <div className="relative mt-6 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/20" />
@@ -169,24 +212,30 @@ export function Recibo() {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 Datos del Cliente
               </p>
-              <div>
-                <p className="text-lg font-bold text-slate-800 leading-tight">
-                  {pedido.cliente_nombre}
-                </p>
-              </div>
+              <p className="text-lg font-bold text-slate-800 leading-tight">
+                {pedido.cliente_nombre}
+              </p>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <Hash className="w-3.5 h-3.5 shrink-0" />
-                  <span>DNI: —</span>
+                  <span>DNI: {clienteDni ?? "—"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <Phone className="w-3.5 h-3.5 shrink-0" />
-                  <span>—</span>
+                  <span>{clienteTelefono ?? "—"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <MapPin className="w-3.5 h-3.5 shrink-0" />
-                  <span>—</span>
-                </div>
+                {clienteCorreo && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Mail className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{clienteCorreo}</span>
+                  </div>
+                )}
+                {clienteDireccion && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{clienteDireccion}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -196,22 +245,20 @@ export function Recibo() {
                 Datos del Pedido
               </p>
               <div className="flex items-start justify-between gap-3">
-                {/* Info */}
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Calendar className="w-3.5 h-3.5 shrink-0" />
-                    <span>{formatDate(pedido.fecha_ingreso)}</span>
+                    <span>Ingreso: {formatDate(pedido.fecha_ingreso)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Calendar className="w-3.5 h-3.5 shrink-0" />
                     <span>Entrega: {formatDate(pedido.fecha_entrega)}</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Por: {pedido.empleado_nombre}
+                    Atendido por: {pedido.empleado_nombre}
                   </p>
                 </div>
 
-                {/* QR */}
                 <div className="flex flex-col items-center gap-1.5 shrink-0">
                   <div className="bg-white/80 rounded-xl p-1.5">
                     <div className="flex items-center gap-1 mb-1.5">
@@ -237,7 +284,6 @@ export function Recibo() {
               </p>
             </div>
 
-            {/* Header */}
             <div className="grid grid-cols-12 gap-2 px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-bold uppercase tracking-wide mb-1">
               <div className="col-span-1" />
               <div className="col-span-5">Prenda</div>
@@ -246,7 +292,6 @@ export function Recibo() {
               <div className="col-span-2 text-right">Precio</div>
             </div>
 
-            {/* Filas */}
             <div className="space-y-1">
               {pedido.prendas.length === 0 ? (
                 <div className="py-8 text-center text-sm text-slate-400">
@@ -283,9 +328,7 @@ export function Recibo() {
                         </span>
                       </div>
                       <div className="col-span-2 text-right">
-                        <span className="text-sm font-semibold text-slate-400 tabular-nums">
-                          —
-                        </span>
+                        <span className="text-sm font-semibold text-slate-400 tabular-nums">—</span>
                       </div>
                     </div>
                   );
@@ -307,22 +350,17 @@ export function Recibo() {
           {/* ── Resumen de pago ──────────────────────────────────────────── */}
           <div className="flex justify-end">
             <div className="w-full sm:w-80">
-              {/* Header */}
               <div className="rounded-t-2xl px-5 py-3 text-center bg-linear-to-r from-teal-800 to-teal-600">
                 <p className="text-white font-bold text-sm tracking-wider uppercase">
                   Resumen de Pago
                 </p>
               </div>
-
-              {/* Filas */}
               <div className="border-x border-slate-200 divide-y divide-slate-100">
                 <PayRow label="Subtotal"  value={`S/ ${subtotal.toFixed(2)}`} />
                 <PayRow label="Descuento" value="S/ 0.00" muted />
                 <PayRow label="IGV (18%)" value={`S/ ${igv.toFixed(2)}`} />
               </div>
-
-              {/* Total */}
-              <div className="rounded-b-2xl bg-gradient-to-r from-teal-600 to-teal-500 px-5 py-4 flex items-center justify-between border border-teal-500">
+              <div className="rounded-b-2xl bg-linear-to-r from-teal-600 to-teal-500 px-5 py-4 flex items-center justify-between border border-teal-500">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-teal-200" />
                   <p className="text-white font-bold text-sm">TOTAL A PAGAR</p>
@@ -344,9 +382,8 @@ export function Recibo() {
             </p>
           </div>
           <p className="text-xs text-slate-400">
-            For inquiries, visit{" "}
-            <span className="text-teal-600 font-medium">lavanderiajireh.com</span>.
-            {" "}Thank you for your business!
+            Consultas: <span className="text-teal-600 font-medium">lavanderiajireh.com</span>
+            {clienteTelefono && <> · {clienteTelefono}</>}
           </p>
         </div>
       </div>

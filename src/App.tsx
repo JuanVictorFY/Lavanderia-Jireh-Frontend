@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -14,7 +15,11 @@ import { Empleados } from "@/pages/Empleados";
 import { Reportes } from "@/pages/Reportes";
 import { ConsultaPublica } from "@/pages/ConsultaPublica";
 import { Recibo } from "@/pages/Recibo";
+import { Registro } from "@/pages/Registro";
 import LandingPage from "@/pages/LandingPage";
+import NosotrosPage from "@/pages/NosotrosPage";
+import ServiciosPage from "@/pages/ServiciosPage";
+import { useThemeStore } from "@/store/theme";
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -23,12 +28,23 @@ const qc = new QueryClient({
 });
 
 export default function App() {
+  const isDark = useThemeStore((s) => s.isDark);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.style.backgroundColor = isDark ? "#0B0D17" : "#f0f9ff";
+  }, [isDark]);
+
   return (
     <QueryClientProvider client={qc}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/nosotros" element={<NosotrosPage />} />
+          <Route path="/nuestros-servicios" element={<ServiciosPage />} />
+          <Route path="/registro" element={<Registro />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/seguimiento" element={<ConsultaPublica />} />
           <Route path="/pedido/:codigo" element={<ConsultaPublica />} />
           <Route path="/pedidos/:id/recibo" element={<Recibo />} />
 

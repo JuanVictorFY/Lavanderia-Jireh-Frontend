@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { WashingMachine, Phone, Menu, X, LogIn } from "lucide-react";
+import { WashingMachine, Menu, X, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const NAV_LINKS = [
-  { label: "Inicio",    href: "#home" },
-  { label: "Nosotros",  href: "#about" },
-  { label: "Servicios", href: "#services" },
-  { label: "Blog",      href: "#blog" },
-  { label: "Contacto",  href: "#contact" },
+  { label: "Inicio",      href: "#home",     to: null },
+  { label: "Nosotros",    href: null,        to: "/nosotros" },
+  { label: "Servicios",   href: null,        to: "/nuestros-servicios" },
+  { label: "Mi pedido",   href: null,        to: "/seguimiento" },
+  { label: "Contacto",    href: "#contact",  to: null },
 ];
 
 const navVariant = {
@@ -69,15 +69,25 @@ export default function Navbar() {
 
           {/* Links escritorio */}
           <ul className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ label, href }, i) => (
+            {NAV_LINKS.map(({ label, href, to }, i) => (
               <motion.li key={label} custom={i} variants={linkVariant} initial="hidden" animate="visible">
-                <a
-                  href={href}
-                  className="relative px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-200 group"
-                >
-                  {label}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 bg-primary rounded-full transition-all duration-300 group-hover:w-4/5" />
-                </a>
+                {to ? (
+                  <Link
+                    to={to}
+                    className="relative px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-200 group inline-block"
+                  >
+                    {label}
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 bg-primary rounded-full transition-all duration-300 group-hover:w-4/5" />
+                  </Link>
+                ) : (
+                  <a
+                    href={href!}
+                    className="relative px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary transition-colors duration-200 group inline-block"
+                  >
+                    {label}
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 bg-primary rounded-full transition-all duration-300 group-hover:w-4/5" />
+                  </a>
+                )}
               </motion.li>
             ))}
           </ul>
@@ -87,17 +97,17 @@ export default function Navbar() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7, duration: 0.4 }}
-            className="hidden md:flex items-center gap-3"
+            className="hidden md:flex items-center gap-2"
           >
-            <motion.a
-              href="tel:18001234567"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:border-primary transition-colors duration-200 group"
-            >
-              <Phone className="w-3.5 h-3.5 text-primary" />
-              <span className="text-sm font-semibold text-dark">1800-1234-1234</span>
-            </motion.a>
+            <Link to="/registro">
+              <motion.span
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:border-primary transition-colors duration-200 text-sm font-semibold text-dark cursor-pointer"
+              >
+                Registrarme
+              </motion.span>
+            </Link>
 
             <Link to="/login">
               <motion.span
@@ -106,7 +116,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm font-semibold rounded-full shadow-md cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                Acceder al sistema
+                Ingresar
               </motion.span>
             </Link>
           </motion.div>
@@ -144,20 +154,30 @@ export default function Navbar() {
             className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
           >
             <ul className="flex flex-col px-4 py-4 gap-1">
-              {NAV_LINKS.map(({ label, href }, i) => (
+              {NAV_LINKS.map(({ label, href, to }, i) => (
                 <motion.li
                   key={label}
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06, duration: 0.28 }}
                 >
-                  <a
-                    href={href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
-                  >
-                    {label}
-                  </a>
+                  {to ? (
+                    <Link
+                      to={to}
+                      onClick={() => setMobileOpen(false)}
+                      className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={href!}
+                      onClick={() => setMobileOpen(false)}
+                      className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                    >
+                      {label}
+                    </a>
+                  )}
                 </motion.li>
               ))}
               <motion.li
@@ -166,20 +186,20 @@ export default function Navbar() {
                 transition={{ delay: NAV_LINKS.length * 0.06 + 0.05, duration: 0.28 }}
                 className="pt-2 flex flex-col gap-2"
               >
-                <a
-                  href="tel:18001234567"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 rounded-xl"
+                <Link
+                  to="/registro"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-primary/30 text-primary font-semibold text-sm rounded-xl"
                 >
-                  <Phone className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-dark">1800-1234-1234</span>
-                </a>
+                  Registrarme
+                </Link>
                 <Link
                   to="/login"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl"
                 >
                   <LogIn className="w-4 h-4" />
-                  Acceder al sistema
+                  Ingresar
                 </Link>
               </motion.li>
             </ul>

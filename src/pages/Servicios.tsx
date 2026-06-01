@@ -67,8 +67,8 @@ export function Servicios() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Servicios</h1>
-          <p className="text-slate-400 text-sm mt-0.5">{data?.count ?? 0} servicios disponibles</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Servicios</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{data?.count ?? 0} servicios disponibles</p>
         </div>
         <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)} className="self-start sm:self-auto">
           Nuevo servicio
@@ -99,9 +99,9 @@ export function Servicios() {
                 </div>
               </div>
               <div className="mt-3">
-                <p className="text-sm font-semibold text-slate-100">{s.nombre_servicio}</p>
-                {s.descripcion && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.descripcion}</p>}
-                <p className="text-lg font-bold text-violet-400 mt-2">{formatCurrency(s.precio_base)}<span className="text-xs text-slate-500 font-normal"> / kg</span></p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{s.nombre_servicio}</p>
+                {s.descripcion && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{s.descripcion}</p>}
+                <p className="text-lg font-bold text-violet-600 dark:text-violet-400 mt-2">{formatCurrency(s.precio_base)}<span className="text-xs text-slate-500 dark:text-slate-400 font-normal"> / kg</span></p>
               </div>
             </CardBody>
           </Card>

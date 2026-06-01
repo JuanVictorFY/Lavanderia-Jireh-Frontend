@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   WashingMachine, Phone, Mail, MapPin,
-  Facebook, Twitter, Instagram, Youtube,
+  Users, MessageCircle, Camera, PlayCircle,
   ChevronUp, Send,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -79,10 +79,10 @@ export default function Footer() {
 
             <div className="flex gap-3 mt-6">
               {[
-                { Icon: Facebook,  label: "Facebook" },
-                { Icon: Twitter,   label: "Twitter / X" },
-                { Icon: Instagram, label: "Instagram" },
-                { Icon: Youtube,   label: "YouTube" },
+                { Icon: Users,        label: "Facebook" },
+                { Icon: MessageCircle, label: "Twitter / X" },
+                { Icon: Camera,       label: "Instagram" },
+                { Icon: PlayCircle,   label: "YouTube" },
               ].map(({ Icon, label }) => (
                 <motion.a
                   key={label}
@@ -211,7 +211,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-gray-500 text-xs">
-            © {new Date().getFullYear()} Jireh Lavandería &amp; Lavandería Jireh. Todos los derechos reservados.
+            © {new Date().getFullYear()} Lavandería Jireh. Todos los derechos reservados.
           </p>
           <div className="flex gap-4">
             {["Política de privacidad", "Términos de uso", "Cookies"].map((link) => (

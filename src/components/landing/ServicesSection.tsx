@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { WashingMachine, Shirt, Sparkles, Iron } from "lucide-react";
+import { WashingMachine, Shirt, Sparkles, Flame } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Link } from "react-router-dom";
 
@@ -27,7 +27,7 @@ const SERVICES = [
     accent: "#EC4899", glow: "rgba(236,72,153,0.22)",
   },
   {
-    icon: Iron,
+    icon: Flame,
     title: "Planchado profesional",
     description: "Acabado impecable en cada prenda. Nuestro equipo de planchado garantiza que tu ropa luzca perfecta en cada ocasión.",
     iconBg: "bg-blue-100", iconColor: "text-blue-500",

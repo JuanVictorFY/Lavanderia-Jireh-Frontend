@@ -92,21 +92,23 @@ export function PedidoDetalle() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate("/pedidos")}
-          className="p-2 rounded-lg hover:bg-white/7 text-slate-400 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white font-mono">{pedido.codigo}</h1>
-            <EstadoBadge estado={pedido.estado} />
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <button
+            onClick={() => navigate("/pedidos")}
+            className="p-2 rounded-lg hover:bg-white/7 text-slate-400 transition-colors cursor-pointer shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-white font-mono">{pedido.codigo}</h1>
+              <EstadoBadge estado={pedido.estado} />
+            </div>
+            <p className="text-slate-400 text-sm mt-0.5 truncate">{pedido.cliente_nombre} · Ingresado {formatDate(pedido.fecha_ingreso)}</p>
           </div>
-          <p className="text-slate-400 text-sm mt-0.5">{pedido.cliente_nombre} · Ingresado {formatDate(pedido.fecha_ingreso)}</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap sm:shrink-0">
           {!isOperario && (
             <Button variant="outline" leftIcon={<Calculator className="w-4 h-4" />} onClick={() => calcularTotal.mutate()} loading={calcularTotal.isPending}>
               Calcular total
@@ -152,7 +154,7 @@ export function PedidoDetalle() {
               <h2 className="text-sm font-semibold text-slate-100">Información del pedido</h2>
             </CardHeader>
             <CardBody>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { label: "Cliente",       value: pedido.cliente_nombre },
                   { label: "Empleado",      value: pedido.empleado_nombre },

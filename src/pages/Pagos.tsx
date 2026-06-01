@@ -43,27 +43,28 @@ export function Pagos() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Pagos</h1>
-        <p className="text-slate-400 text-sm mt-0.5">{total} pagos registrados</p>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Pagos</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{total} pagos registrados</p>
       </div>
 
       {/* Cards — mobile */}
-      <Card className="sm:hidden">
+      <div className="sm:hidden space-y-4">
+      <Card>
         {pagos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-sm">
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-sm">
             <CreditCard className="w-8 h-8 mb-2 opacity-30" />
             No hay pagos registrados
           </div>
         ) : (
-          <div className="divide-y divide-white/4">
+          <div className="divide-y divide-slate-100 dark:divide-white/4">
             {pagos.map((pago) => (
               <div key={pago.id} className="px-4 py-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-slate-100">Pedido #{pago.id_pedido}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(pago.fecha_pago)}</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-100">Pedido #{pago.id_pedido}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{formatDate(pago.fecha_pago)}</p>
                   </div>
-                  <span className="text-sm font-bold text-white whitespace-nowrap">{formatCurrency(pago.monto)}</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-white whitespace-nowrap">{formatCurrency(pago.monto)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -84,7 +85,7 @@ export function Pagos() {
                       size="sm"
                       leftIcon={<Ban className="w-3.5 h-3.5" />}
                       onClick={() => { if (confirm("¿Anular este pago?")) anular.mutate(pago.id); }}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0"
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0"
                     >
                       Anular
                     </Button>
@@ -95,13 +96,15 @@ export function Pagos() {
           </div>
         )}
       </Card>
+      <Pagination page={page} totalPages={totalPages} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
+      </div>
 
       {/* Table — sm+ */}
       <Card className="hidden sm:block">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/6">
+              <tr className="border-b border-slate-100 dark:border-white/6">
                 {["#", "Pedido", "Monto", "Método", "Fecha", "Estado", ""].map((h) => (
                   <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 last:text-right whitespace-nowrap">
                     {h}
@@ -109,26 +112,26 @@ export function Pagos() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/4">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/4">
               {pagos.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500 text-sm">
+                  <td colSpan={7} className="text-center py-12 text-slate-400 text-sm">
                     <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
                     No hay pagos registrados
                   </td>
                 </tr>
               )}
               {pagos.map((pago) => (
-                <tr key={pago.id} className="hover:bg-white/4 transition-colors">
-                  <td className="px-5 py-3.5 text-sm text-slate-500 font-mono whitespace-nowrap">#{pago.id}</td>
-                  <td className="px-5 py-3.5 text-sm font-medium text-slate-100 whitespace-nowrap">Pedido #{pago.id_pedido}</td>
+                <tr key={pago.id} className="hover:bg-slate-50 dark:hover:bg-white/4 transition-colors">
+                  <td className="px-5 py-3.5 text-sm text-slate-400 font-mono whitespace-nowrap">#{pago.id}</td>
+                  <td className="px-5 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-100 whitespace-nowrap">Pedido #{pago.id_pedido}</td>
                   <td className="px-5 py-3.5">
-                    <span className="text-sm font-bold text-white whitespace-nowrap">{formatCurrency(pago.monto)}</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-white whitespace-nowrap">{formatCurrency(pago.monto)}</span>
                   </td>
                   <td className="px-5 py-3.5">
                     <Badge variant="secondary">{METODO_LABELS[pago.metodo_pago] ?? pago.metodo_pago}</Badge>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-slate-400 whitespace-nowrap">{formatDate(pago.fecha_pago)}</td>
+                  <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDate(pago.fecha_pago)}</td>
                   <td className="px-5 py-3.5">
                     <Badge
                       variant={
@@ -149,7 +152,7 @@ export function Pagos() {
                         onClick={() => {
                           if (confirm("¿Anular este pago?")) anular.mutate(pago.id);
                         }}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                       >
                         Anular
                       </Button>

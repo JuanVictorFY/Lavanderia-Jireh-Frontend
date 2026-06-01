@@ -135,7 +135,7 @@ export function NuevoPedido() {
             <h2 className="text-sm font-semibold text-slate-100">Datos generales</h2>
           </CardHeader>
           <CardBody className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-slate-300">Cliente</label>
                 <select {...register("id_cliente")} className={SELECT_CLASS}>
@@ -163,7 +163,7 @@ export function NuevoPedido() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Fecha de entrega estimada"
                 type="datetime-local"
@@ -238,7 +238,7 @@ export function NuevoPedido() {
                   </div>
 
                   {/* Tipo y Color */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                       label="Tipo de prenda"
                       placeholder="Ej: Camisa, Pantalón..."
@@ -253,7 +253,7 @@ export function NuevoPedido() {
                   </div>
 
                   {/* Peso, Cantidad, Observaciones */}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <Input
                       label="Peso (kg)"
                       type="number"

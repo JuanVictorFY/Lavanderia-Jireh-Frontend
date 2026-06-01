@@ -2,6 +2,7 @@ export interface Cliente {
   id: number;
   nombres: string;
   apellidos: string;
+  dni?: string;
   telefono: string | null;
   direccion: string | null;
   correo: string | null;
@@ -35,7 +36,12 @@ export interface EstadoPedido {
 export interface Pedido {
   id: number;
   codigo: string;
+  cliente_id?: number;
   cliente_nombre: string;
+  cliente_dni?: string;
+  cliente_telefono?: string;
+  cliente_correo?: string;
+  cliente_direccion?: string;
   empleado_nombre: string;
   fecha_ingreso: string;
   fecha_entrega: string | null;
