@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { WashingMachine, Menu, X, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -16,7 +16,7 @@ const navVariant = {
   visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
-const linkVariant = {
+const linkVariant: Variants = {
   hidden:  { opacity: 0, y: -10 },
   visible: (i: number) => ({
     opacity: 1, y: 0,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   WashingMachine, Phone, Mail, MapPin,
   Users, MessageCircle, Camera, PlayCircle,
@@ -11,7 +11,7 @@ const QUICK_LINKS  = ["Inicio", "Nosotros", "Servicios", "Cómo funcionamos", "B
 const SERVICES_LIST = ["Lavado doméstico", "Limpieza en seco", "Eliminación de manchas", "Planchado profesional", "Limpieza de cortinas", "Pedidos al por mayor"];
 const CATEGORIES    = ["Ropa diaria", "Ropa formal", "Telas delicadas", "Ropa infantil", "Ropa deportiva", "Ropa de cama y lencería"];
 
-const colVariant = {
+const colVariant: Variants = {
   hidden:  { opacity: 0, y: 30 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
