@@ -7,6 +7,7 @@ import { WashingMachine, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import api from "@/lib/api";
 
 const schema = z.object({
   username: z.string().min(1, "Requerido"),
@@ -28,7 +29,7 @@ export function Login() {
   const onSubmit = async (data: FormData) => {
     setServerError("");
     try {
-      const res = await axios.post("/api/auth/login/", data);
+      const res = await api.post("/auth/login/", data);
       setTokens(res.data.access, res.data.refresh);
       if (res.data.empleado) setEmpleado(res.data.empleado);
       navigate("/dashboard");
@@ -44,7 +45,7 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0f9ff] via-white to-[#e0f7fa] dark:from-[#07080F] dark:via-[#0D0A1F] dark:to-[#07080F] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-[#f0f9ff] via-white to-[#e0f7fa] dark:from-[#07080F] dark:via-[#0D0A1F] dark:to-[#07080F] flex items-center justify-center p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
