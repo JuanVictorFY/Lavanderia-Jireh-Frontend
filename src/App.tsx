@@ -31,8 +31,14 @@ export default function App() {
   const isDark = useThemeStore((s) => s.isDark);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.style.backgroundColor = isDark ? "#0B0D17" : "#f0f9ff";
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    root.style.colorScheme = isDark ? "dark" : "light";
+    root.style.backgroundColor = isDark ? "#0B0D17" : "#f0f9ff";
   }, [isDark]);
 
   return (

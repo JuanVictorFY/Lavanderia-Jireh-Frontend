@@ -2,6 +2,12 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        const s = JSON.parse(localStorage.getItem('theme-preference') || '{}');
+        if (s.state?.isDark) document.documentElement.classList.add('dark');
+      } catch {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Lavandería Jireh — Servicio profesional de lavandería y limpieza en seco a domicilio." />

@@ -22,6 +22,11 @@
     margin: 0;
   }
 
+  .dark body {
+    background-color: #0B0D17;
+    color: #f1f5f9;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
