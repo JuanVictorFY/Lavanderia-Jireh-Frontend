@@ -284,7 +284,7 @@ export function PedidoDetalle() {
       </Modal>
 
       {/* Modal registrar pago */}
-      <Modal open={modalPago} onClose={() => setModalPago(false)} title="Registrar pago">
+      <Modal open={modalPago} onClose={() => { setModalPago(false); registrarPago.reset(); }} title="Registrar pago">
         <div className="space-y-4">
           <Input
             label="Monto (S/)"
@@ -301,9 +301,22 @@ export function PedidoDetalle() {
             onChange={(e) => setMetodoPago(e.target.value)}
             options={METODOS_PAGO}
           />
+          {registrarPago.isError && (
+            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 rounded-lg px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>
+                {(registrarPago.error as any)?.response?.data?.error ?? "Error al registrar el pago"}
+              </span>
+            </div>
+          )}
           <div className="flex gap-3 pt-1">
-            <Button variant="secondary" className="flex-1" onClick={() => setModalPago(false)}>Cancelar</Button>
-            <Button className="flex-1" onClick={() => registrarPago.mutate()} loading={registrarPago.isPending}>
+            <Button variant="secondary" className="flex-1" onClick={() => { setModalPago(false); registrarPago.reset(); }}>Cancelar</Button>
+            <Button
+              className="flex-1"
+              onClick={() => registrarPago.mutate()}
+              loading={registrarPago.isPending}
+              disabled={!monto || parseFloat(monto) <= 0}
+            >
               Confirmar pago
             </Button>
           </div>

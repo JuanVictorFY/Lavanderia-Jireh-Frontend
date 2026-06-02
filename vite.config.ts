@@ -55,8 +55,8 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        "/api":    backendUrl,
-        "/pedido": backendUrl,
+        "/api":      backendUrl,
+        "/pedido/":  backendUrl,
       },
     },
   };

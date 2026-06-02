@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Ban } from "lucide-react";
+import { CreditCard, Ban, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ export function Pagos() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<PaginatedResponse<Pago>>({
+  const { data, isLoading, isError } = useQuery<PaginatedResponse<Pago>>({
     queryKey: ["pagos", page],
     queryFn: () => api.get(`/pagos/?page=${page}&page_size=${PAGE_SIZE}`).then((r) => r.data),
   });
@@ -35,6 +35,12 @@ export function Pagos() {
   });
 
   if (isLoading) return <PageSpinner />;
+  if (isError) return (
+    <div className="flex items-center gap-2 text-red-400 bg-red-500/10 rounded-lg px-4 py-3 text-sm">
+      <AlertCircle className="w-4 h-4 shrink-0" />
+      <span>Error al cargar los pagos. Verifica tu conexión e intenta de nuevo.</span>
+    </div>
+  );
 
   const pagos      = data?.results ?? [];
   const total      = data?.count ?? 0;
