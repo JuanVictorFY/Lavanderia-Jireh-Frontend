@@ -78,7 +78,7 @@ export function PedidoDetalle() {
 
   const registrarPago = useMutation({
     mutationFn: () =>
-      api.post("/pagos/", { id_pedido: id, monto: parseFloat(monto), metodo_pago: metodoPago }),
+      api.post("/pagos/", { id_pedido: parseInt(id!, 10), monto: parseFloat(monto), metodo_pago: metodoPago }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pagos"] });
       qc.invalidateQueries({ queryKey: ["pedido", id] });
@@ -96,7 +96,7 @@ export function PedidoDetalle() {
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <button
             onClick={() => navigate("/pedidos")}
-            className="p-2 rounded-lg hover:bg-white/7 text-slate-400 transition-colors cursor-pointer shrink-0"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/7 text-slate-400 transition-colors cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -305,7 +305,10 @@ export function PedidoDetalle() {
             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 rounded-lg px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>
-                {(registrarPago.error as any)?.response?.data?.error ?? "Error al registrar el pago"}
+                {(registrarPago.error as any)?.response?.data?.error
+                  ?? (registrarPago.error as any)?.response?.data?.detail
+                  ?? (registrarPago.error as any)?.response?.data?.non_field_errors?.[0]
+                  ?? "Error al registrar el pago"}
               </span>
             </div>
           )}
